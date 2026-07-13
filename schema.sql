@@ -1,13 +1,13 @@
-/*
+﻿/*
   Project: 현장 안전 AI 관제 시스템
-  Purpose: 요구사항 정의서 + ERD 기반 PostgreSQL 초기 스키마
+  Purpose: 요구사항 정의서 + ERD 기반 MySQL 8 초기 스키마
 
   구분:
   - [CORE] MVP 구현에도 거의 필요한 핵심 테이블
   - [FULL] 요구사항 정의서 기능을 그대로 구현할 때 필요한 확장 테이블
 
   참고:
-  - AI 출력 결과는 추후 모델 응답 포맷이 바뀔 수 있어 JSONB를 같이 둔다.
+  - AI 출력 결과는 추후 모델 응답 포맷이 바뀔 수 있어 JSON을 같이 둔다.
   - 파일은 files 테이블에 모으고, 업무 테이블에서 FK로 연결한다.
 */
 
@@ -21,17 +21,17 @@
 -- =========================================================
 
 CREATE TABLE sites (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   site_code VARCHAR(50) UNIQUE NOT NULL,
   name VARCHAR(150) NOT NULL,
   address TEXT,
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE users (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   employee_no VARCHAR(50) UNIQUE,
   username VARCHAR(80) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
@@ -40,42 +40,40 @@ CREATE TABLE users (
   company_name VARCHAR(150),
   language VARCHAR(20) DEFAULT 'ko',
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE roles (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   role_code VARCHAR(50) UNIQUE NOT NULL,
   name VARCHAR(80) NOT NULL,
   description TEXT
 );
 
 CREATE TABLE user_roles (
-  id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES users(id),
-  role_id BIGINT NOT NULL REFERENCES roles(id),
-  site_id BIGINT REFERENCES sites(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
+  site_id BIGINT,
+  site_scope_id BIGINT GENERATED ALWAYS AS (COALESCE(site_id, 0)) STORED,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT ux_user_roles_scope UNIQUE (user_id, role_id, site_scope_id),
+  CONSTRAINT fk_user_roles_user_id FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_user_roles_role_id FOREIGN KEY (role_id) REFERENCES roles(id),
+  CONSTRAINT fk_user_roles_site_id FOREIGN KEY (site_id) REFERENCES sites(id)
 );
-
-CREATE UNIQUE INDEX ux_user_roles_site
-  ON user_roles(user_id, role_id, site_id)
-  WHERE site_id IS NOT NULL;
-
-CREATE UNIQUE INDEX ux_user_roles_global
-  ON user_roles(user_id, role_id)
-  WHERE site_id IS NULL;
 
 -- [FULL] JWT refresh token / 세션 종료 관리가 필요할 때 사용
 -- 기능: 토큰 폐기, 강제 로그아웃, 다중 기기 세션 추적
 CREATE TABLE auth_sessions (
-  id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
   refresh_token_hash TEXT NOT NULL,
-  issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  expires_at TIMESTAMPTZ NOT NULL,
-  revoked_at TIMESTAMPTZ
+  issued_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  expires_at TIMESTAMP(6) NOT NULL,
+  revoked_at TIMESTAMP(6),
+  CONSTRAINT fk_auth_sessions_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 
@@ -90,16 +88,51 @@ CREATE TABLE auth_sessions (
 -- =========================================================
 
 CREATE TABLE files (
-  id BIGSERIAL PRIMARY KEY,
-  uploaded_by BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  uploaded_by BIGINT,
   storage_key TEXT NOT NULL,
   original_name TEXT NOT NULL,
   mime_type VARCHAR(100),
   file_type VARCHAR(40) NOT NULL,
   file_size BIGINT,
   checksum VARCHAR(128),
-  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  metadata JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_files_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id)
+);
+
+CREATE TABLE board_posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  author_id BIGINT NOT NULL,
+  category VARCHAR(50) NOT NULL DEFAULT 'general',
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  view_count INT NOT NULL DEFAULT 0,
+  status VARCHAR(30) NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_board_posts_author_id FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE board_post_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT NOT NULL,
+  author_id BIGINT NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_board_post_comments_post_id FOREIGN KEY (post_id) REFERENCES board_posts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_board_post_comments_author_id FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE board_post_files (
+  post_id BIGINT NOT NULL,
+  file_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (post_id, file_id),
+  CONSTRAINT fk_board_post_files_post_id FOREIGN KEY (post_id) REFERENCES board_posts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_board_post_files_file_id FOREIGN KEY (file_id) REFERENCES files(id)
 );
 
 
@@ -113,38 +146,42 @@ CREATE TABLE files (
 -- =========================================================
 
 CREATE TABLE blocks (
-  id BIGSERIAL PRIMARY KEY,
-  site_id BIGINT NOT NULL REFERENCES sites(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  site_id BIGINT NOT NULL,
   block_code VARCHAR(50) NOT NULL,
   grid_x INT,
   grid_y INT,
-  polygon JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (site_id, block_code)
+  polygon JSON,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  UNIQUE (site_id, block_code),
+  CONSTRAINT fk_blocks_site_id FOREIGN KEY (site_id) REFERENCES sites(id)
 );
 
 CREATE TABLE danger_zones (
-  id BIGSERIAL PRIMARY KEY,
-  block_id BIGINT NOT NULL REFERENCES blocks(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  block_id BIGINT NOT NULL,
   zone_type VARCHAR(50) NOT NULL,
-  polygon JSONB NOT NULL,
+  polygon JSON NOT NULL,
   threshold_score INT DEFAULT 70,
   access_limit INT,
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_danger_zones_block_id FOREIGN KEY (block_id) REFERENCES blocks(id)
 );
 
 CREATE TABLE cameras (
-  id BIGSERIAL PRIMARY KEY,
-  site_id BIGINT NOT NULL REFERENCES sites(id),
-  block_id BIGINT REFERENCES blocks(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  site_id BIGINT NOT NULL,
+  block_id BIGINT,
   camera_code VARCHAR(50) NOT NULL,
   name VARCHAR(120),
   stream_url TEXT,
   edge_device VARCHAR(120),
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (site_id, camera_code)
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  UNIQUE (site_id, camera_code),
+  CONSTRAINT fk_cameras_site_id FOREIGN KEY (site_id) REFERENCES sites(id),
+  CONSTRAINT fk_cameras_block_id FOREIGN KEY (block_id) REFERENCES blocks(id)
 );
 
 
@@ -158,32 +195,37 @@ CREATE TABLE cameras (
 -- =========================================================
 
 CREATE TABLE work_permits (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   permit_no VARCHAR(80) UNIQUE,
-  site_id BIGINT NOT NULL REFERENCES sites(id),
-  block_id BIGINT REFERENCES blocks(id),
-  applicant_id BIGINT NOT NULL REFERENCES users(id),
+  site_id BIGINT NOT NULL,
+  block_id BIGINT,
+  applicant_id BIGINT NOT NULL,
   work_type VARCHAR(80),
   work_title TEXT,
   work_content TEXT,
   worker_count INT,
   equipment TEXT,
-  start_time TIMESTAMPTZ,
-  end_time TIMESTAMPTZ,
+  start_time TIMESTAMP(6),
+  end_time TIMESTAMP(6),
   gps_lat NUMERIC(10, 7),
   gps_lng NUMERIC(10, 7),
   is_high_risk BOOLEAN NOT NULL DEFAULT false,
   status VARCHAR(30) NOT NULL DEFAULT 'draft',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_work_permits_site_id FOREIGN KEY (site_id) REFERENCES sites(id),
+  CONSTRAINT fk_work_permits_block_id FOREIGN KEY (block_id) REFERENCES blocks(id),
+  CONSTRAINT fk_work_permits_applicant_id FOREIGN KEY (applicant_id) REFERENCES users(id)
 );
 
 CREATE TABLE work_permit_files (
-  permit_id BIGINT NOT NULL REFERENCES work_permits(id) ON DELETE CASCADE,
-  file_id BIGINT NOT NULL REFERENCES files(id),
+  permit_id BIGINT NOT NULL,
+  file_id BIGINT NOT NULL,
   purpose VARCHAR(50) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (permit_id, file_id)
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (permit_id, file_id),
+  CONSTRAINT fk_work_permit_files_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE,
+  CONSTRAINT fk_work_permit_files_file_id FOREIGN KEY (file_id) REFERENCES files(id)
 );
 
 -- [FULL] 허가서 PDF 분석 결과 저장
@@ -192,16 +234,17 @@ CREATE TABLE work_permit_files (
 -- - 허가서 분석 > 통합 안전 기준 요약
 -- - 허가서 분석 > 승인 조건 도출
 CREATE TABLE permit_analysis_results (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT NOT NULL REFERENCES work_permits(id) ON DELETE CASCADE,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT NOT NULL,
   analysis_type VARCHAR(50) NOT NULL,
   model_name VARCHAR(80),
   summary TEXT,
-  extracted_data JSONB NOT NULL DEFAULT '{}'::jsonb,
-  risk_factors JSONB NOT NULL DEFAULT '[]'::jsonb,
-  recommended_conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  extracted_data JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  risk_factors JSON NOT NULL DEFAULT (JSON_ARRAY()),
+  recommended_conditions JSON NOT NULL DEFAULT (JSON_ARRAY()),
   confidence NUMERIC(5, 4),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_permit_analysis_results_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE
 );
 
 -- [FULL] 유사 사고 검색 결과 저장
@@ -209,15 +252,16 @@ CREATE TABLE permit_analysis_results (
 -- 요구사항 매칭:
 -- - 허가서 분석 > 유사사고 검색
 CREATE TABLE similar_accident_results (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT NOT NULL REFERENCES work_permits(id) ON DELETE CASCADE,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT NOT NULL,
   source_title TEXT,
   source_url TEXT,
   accident_type VARCHAR(80),
   similarity_score NUMERIC(6, 4),
   summary TEXT,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_similar_accident_results_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE
 );
 
 
@@ -232,7 +276,7 @@ CREATE TABLE similar_accident_results (
 -- =========================================================
 
 CREATE TABLE safety_rules (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   rule_code VARCHAR(80) UNIQUE NOT NULL,
   title TEXT NOT NULL,
   category VARCHAR(80),
@@ -242,37 +286,42 @@ CREATE TABLE safety_rules (
   severity VARCHAR(30),
   source TEXT,
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE rule_checks (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT REFERENCES work_permits(id) ON DELETE CASCADE,
-  rule_id BIGINT NOT NULL REFERENCES safety_rules(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT,
+  rule_id BIGINT NOT NULL,
   checker_type VARCHAR(30) NOT NULL DEFAULT 'ai',
   check_result VARCHAR(30) NOT NULL,
   result_score INT,
   evidence TEXT,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_rule_checks_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rule_checks_rule_id FOREIGN KEY (rule_id) REFERENCES safety_rules(id)
 );
 
 CREATE TABLE checklist_templates (
-  id BIGSERIAL PRIMARY KEY,
-  site_id BIGINT REFERENCES sites(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  site_id BIGINT,
   work_type VARCHAR(80),
   title VARCHAR(150) NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_checklist_templates_site_id FOREIGN KEY (site_id) REFERENCES sites(id)
 );
 
 CREATE TABLE checklist_items (
-  id BIGSERIAL PRIMARY KEY,
-  template_id BIGINT NOT NULL REFERENCES checklist_templates(id) ON DELETE CASCADE,
-  rule_id BIGINT REFERENCES safety_rules(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  template_id BIGINT NOT NULL,
+  rule_id BIGINT,
   item_text TEXT NOT NULL,
   sort_order INT NOT NULL DEFAULT 0,
-  is_required BOOLEAN NOT NULL DEFAULT true
+  is_required BOOLEAN NOT NULL DEFAULT true,
+  CONSTRAINT fk_checklist_items_template_id FOREIGN KEY (template_id) REFERENCES checklist_templates(id) ON DELETE CASCADE,
+  CONSTRAINT fk_checklist_items_rule_id FOREIGN KEY (rule_id) REFERENCES safety_rules(id)
 );
 
 
@@ -288,42 +337,52 @@ CREATE TABLE checklist_items (
 -- =========================================================
 
 CREATE TABLE tbm_sessions (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT NOT NULL REFERENCES work_permits(id) ON DELETE CASCADE,
-  host_id BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT NOT NULL,
+  host_id BIGINT,
   title VARCHAR(150),
-  session_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  session_date DATE NOT NULL DEFAULT (CURRENT_DATE),
   status VARCHAR(30) NOT NULL DEFAULT 'planned',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_tbm_sessions_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tbm_sessions_host_id FOREIGN KEY (host_id) REFERENCES users(id)
 );
 
 CREATE TABLE tbm_materials (
-  id BIGSERIAL PRIMARY KEY,
-  tbm_session_id BIGINT NOT NULL REFERENCES tbm_sessions(id) ON DELETE CASCADE,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tbm_session_id BIGINT NOT NULL,
   material_type VARCHAR(50) NOT NULL,
   language VARCHAR(20) DEFAULT 'ko',
   content TEXT,
-  file_id BIGINT REFERENCES files(id),
+  file_id BIGINT,
   model_name VARCHAR(80),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_tbm_materials_tbm_session_id FOREIGN KEY (tbm_session_id) REFERENCES tbm_sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tbm_materials_file_id FOREIGN KEY (file_id) REFERENCES files(id)
 );
 
 CREATE TABLE tbm_attendance (
-  tbm_session_id BIGINT NOT NULL REFERENCES tbm_sessions(id) ON DELETE CASCADE,
-  user_id BIGINT NOT NULL REFERENCES users(id),
-  confirmed_at TIMESTAMPTZ,
-  signature_file_id BIGINT REFERENCES files(id),
-  PRIMARY KEY (tbm_session_id, user_id)
+  tbm_session_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  confirmed_at TIMESTAMP(6),
+  signature_file_id BIGINT,
+  PRIMARY KEY (tbm_session_id, user_id),
+  CONSTRAINT fk_tbm_attendance_tbm_session_id FOREIGN KEY (tbm_session_id) REFERENCES tbm_sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tbm_attendance_user_id FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_tbm_attendance_signature_file_id FOREIGN KEY (signature_file_id) REFERENCES files(id)
 );
 
 CREATE TABLE checklist_responses (
-  id BIGSERIAL PRIMARY KEY,
-  tbm_session_id BIGINT NOT NULL REFERENCES tbm_sessions(id) ON DELETE CASCADE,
-  checklist_item_id BIGINT NOT NULL REFERENCES checklist_items(id),
-  responder_id BIGINT NOT NULL REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tbm_session_id BIGINT NOT NULL,
+  checklist_item_id BIGINT NOT NULL,
+  responder_id BIGINT NOT NULL,
   response_value VARCHAR(30) NOT NULL,
   note TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_checklist_responses_tbm_session_id FOREIGN KEY (tbm_session_id) REFERENCES tbm_sessions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_checklist_responses_checklist_item_id FOREIGN KEY (checklist_item_id) REFERENCES checklist_items(id),
+  CONSTRAINT fk_checklist_responses_responder_id FOREIGN KEY (responder_id) REFERENCES users(id)
 );
 
 
@@ -336,23 +395,26 @@ CREATE TABLE checklist_responses (
 -- =========================================================
 
 CREATE TABLE approval_flows (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT NOT NULL REFERENCES work_permits(id) ON DELETE CASCADE,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pending',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  completed_at TIMESTAMPTZ
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  completed_at TIMESTAMP(6),
+  CONSTRAINT fk_approval_flows_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id) ON DELETE CASCADE
 );
 
 CREATE TABLE approval_steps (
-  id BIGSERIAL PRIMARY KEY,
-  flow_id BIGINT NOT NULL REFERENCES approval_flows(id) ON DELETE CASCADE,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  flow_id BIGINT NOT NULL,
   step_order INT NOT NULL,
-  approver_id BIGINT NOT NULL REFERENCES users(id),
+  approver_id BIGINT NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pending',
   condition_text TEXT,
   comment TEXT,
-  decided_at TIMESTAMPTZ,
-  UNIQUE (flow_id, step_order)
+  decided_at TIMESTAMP(6),
+  UNIQUE (flow_id, step_order),
+  CONSTRAINT fk_approval_steps_flow_id FOREIGN KEY (flow_id) REFERENCES approval_flows(id) ON DELETE CASCADE,
+  CONSTRAINT fk_approval_steps_approver_id FOREIGN KEY (approver_id) REFERENCES users(id)
 );
 
 
@@ -368,47 +430,60 @@ CREATE TABLE approval_steps (
 -- =========================================================
 
 CREATE TABLE vision_detections (
-  id BIGSERIAL PRIMARY KEY,
-  camera_id BIGINT REFERENCES cameras(id),
-  block_id BIGINT REFERENCES blocks(id),
-  zone_id BIGINT REFERENCES danger_zones(id),
-  file_id BIGINT REFERENCES files(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  camera_id BIGINT,
+  block_id BIGINT,
+  zone_id BIGINT,
+  file_id BIGINT,
   detection_type VARCHAR(60) NOT NULL,
   object_label VARCHAR(80),
   confidence NUMERIC(5, 4),
-  bbox JSONB,
+  bbox JSON,
   is_worker_identified BOOLEAN,
-  worker_id BIGINT REFERENCES users(id),
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  detected_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  worker_id BIGINT,
+  payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  detected_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_vision_detections_camera_id FOREIGN KEY (camera_id) REFERENCES cameras(id),
+  CONSTRAINT fk_vision_detections_block_id FOREIGN KEY (block_id) REFERENCES blocks(id),
+  CONSTRAINT fk_vision_detections_zone_id FOREIGN KEY (zone_id) REFERENCES danger_zones(id),
+  CONSTRAINT fk_vision_detections_file_id FOREIGN KEY (file_id) REFERENCES files(id),
+  CONSTRAINT fk_vision_detections_worker_id FOREIGN KEY (worker_id) REFERENCES users(id)
 );
 
 CREATE TABLE safety_events (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   event_type VARCHAR(60) NOT NULL,
   source_type VARCHAR(30) NOT NULL,
-  reporter_id BIGINT REFERENCES users(id),
-  permit_id BIGINT REFERENCES work_permits(id),
-  block_id BIGINT REFERENCES blocks(id),
-  zone_id BIGINT REFERENCES danger_zones(id),
-  detection_id BIGINT REFERENCES vision_detections(id),
-  file_id BIGINT REFERENCES files(id),
+  reporter_id BIGINT,
+  permit_id BIGINT,
+  block_id BIGINT,
+  zone_id BIGINT,
+  detection_id BIGINT,
+  file_id BIGINT,
   severity VARCHAR(30) NOT NULL DEFAULT 'medium',
   title TEXT NOT NULL,
   description TEXT,
-  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
   status VARCHAR(30) NOT NULL DEFAULT 'open',
-  event_time TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  event_time TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_safety_events_reporter_id FOREIGN KEY (reporter_id) REFERENCES users(id),
+  CONSTRAINT fk_safety_events_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id),
+  CONSTRAINT fk_safety_events_block_id FOREIGN KEY (block_id) REFERENCES blocks(id),
+  CONSTRAINT fk_safety_events_zone_id FOREIGN KEY (zone_id) REFERENCES danger_zones(id),
+  CONSTRAINT fk_safety_events_detection_id FOREIGN KEY (detection_id) REFERENCES vision_detections(id),
+  CONSTRAINT fk_safety_events_file_id FOREIGN KEY (file_id) REFERENCES files(id)
 );
 
 CREATE TABLE event_actions (
-  id BIGSERIAL PRIMARY KEY,
-  event_id BIGINT NOT NULL REFERENCES safety_events(id) ON DELETE CASCADE,
-  actor_id BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id BIGINT NOT NULL,
+  actor_id BIGINT,
   action_type VARCHAR(50) NOT NULL,
   comment TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_event_actions_event_id FOREIGN KEY (event_id) REFERENCES safety_events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_event_actions_actor_id FOREIGN KEY (actor_id) REFERENCES users(id)
 );
 
 
@@ -422,31 +497,38 @@ CREATE TABLE event_actions (
 -- =========================================================
 
 CREATE TABLE risk_scores (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT REFERENCES work_permits(id),
-  block_id BIGINT REFERENCES blocks(id),
-  zone_id BIGINT REFERENCES danger_zones(id),
-  event_id BIGINT REFERENCES safety_events(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT,
+  block_id BIGINT,
+  zone_id BIGINT,
+  event_id BIGINT,
   score INT NOT NULL CHECK (score BETWEEN 0 AND 100),
   risk_level VARCHAR(30) NOT NULL,
   model_name VARCHAR(80),
-  factors JSONB NOT NULL DEFAULT '{}'::jsonb,
-  shap_values JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  factors JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  shap_values JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_risk_scores_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id),
+  CONSTRAINT fk_risk_scores_block_id FOREIGN KEY (block_id) REFERENCES blocks(id),
+  CONSTRAINT fk_risk_scores_zone_id FOREIGN KEY (zone_id) REFERENCES danger_zones(id),
+  CONSTRAINT fk_risk_scores_event_id FOREIGN KEY (event_id) REFERENCES safety_events(id)
 );
 
 CREATE TABLE risk_simulations (
-  id BIGSERIAL PRIMARY KEY,
-  permit_id BIGINT REFERENCES work_permits(id),
-  block_id BIGINT REFERENCES blocks(id),
-  requested_by BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  permit_id BIGINT,
+  block_id BIGINT,
+  requested_by BIGINT,
   scenario_type VARCHAR(50) NOT NULL,
-  input_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  input_payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
   before_score INT,
   after_score INT,
   result_summary TEXT,
-  result_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
-  simulated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  result_payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
+  simulated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_risk_simulations_permit_id FOREIGN KEY (permit_id) REFERENCES work_permits(id),
+  CONSTRAINT fk_risk_simulations_block_id FOREIGN KEY (block_id) REFERENCES blocks(id),
+  CONSTRAINT fk_risk_simulations_requested_by FOREIGN KEY (requested_by) REFERENCES users(id)
 );
 
 
@@ -461,40 +543,43 @@ CREATE TABLE risk_simulations (
 -- =========================================================
 
 CREATE TABLE notifications (
-  id BIGSERIAL PRIMARY KEY,
-  event_id BIGINT REFERENCES safety_events(id),
-  user_id BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  event_id BIGINT,
+  user_id BIGINT,
   channel VARCHAR(30) NOT NULL,
   title TEXT NOT NULL,
   message TEXT,
   status VARCHAR(30) NOT NULL DEFAULT 'pending',
-  sent_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  sent_at TIMESTAMP(6),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_notifications_event_id FOREIGN KEY (event_id) REFERENCES safety_events(id),
+  CONSTRAINT fk_notifications_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE model_runs (
-  id BIGSERIAL PRIMARY KEY,
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
   model_name VARCHAR(80) NOT NULL,
   model_version VARCHAR(50),
   input_type VARCHAR(50) NOT NULL,
   input_ref_id BIGINT,
   status VARCHAR(30) NOT NULL DEFAULT 'queued',
-  started_at TIMESTAMPTZ,
-  finished_at TIMESTAMPTZ,
-  output_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  started_at TIMESTAMP(6),
+  finished_at TIMESTAMP(6),
+  output_payload JSON NOT NULL DEFAULT (JSON_OBJECT()),
   error_message TEXT
 );
 
 CREATE TABLE audit_logs (
-  id BIGSERIAL PRIMARY KEY,
-  actor_id BIGINT REFERENCES users(id),
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  actor_id BIGINT,
   action VARCHAR(80) NOT NULL,
   target_table VARCHAR(80),
   target_id BIGINT,
-  before_data JSONB,
-  after_data JSONB,
-  ip_address INET,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  before_data JSON,
+  after_data JSON,
+  ip_address VARCHAR(45),
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_audit_logs_actor_id FOREIGN KEY (actor_id) REFERENCES users(id)
 );
 
 
@@ -509,3 +594,4 @@ CREATE INDEX idx_safety_events_status_time ON safety_events(status, event_time D
 CREATE INDEX idx_vision_detections_time ON vision_detections(detected_at DESC);
 CREATE INDEX idx_risk_scores_created ON risk_scores(created_at DESC);
 CREATE INDEX idx_notifications_user_status ON notifications(user_id, status);
+CREATE INDEX idx_board_posts_status_time ON board_posts(status, created_at DESC);

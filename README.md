@@ -8,7 +8,7 @@
 - Spring Boot 3.3.5
 - Spring Web
 - Spring Data JPA
-- PostgreSQL Driver
+- MySQL Connector/J
 - Flyway
 - React/Vite frontend mockup
 
@@ -33,12 +33,12 @@ npm run dev
 
 ## 실행 전 준비
 
-PostgreSQL DB를 만들고 환경변수를 설정합니다.
+MySQL 8 DB를 만들고 환경변수를 설정합니다. Docker가 설치된 로컬 환경에서는 `docker compose up -d mysql`로 실행할 수 있습니다.
 
 ```powershell
-$env:DB_URL="jdbc:postgresql://localhost:5432/safety_ai_control"
-$env:DB_USERNAME="postgres"
-$env:DB_PASSWORD="postgres"
+$env:DB_URL="jdbc:mysql://localhost:3306/safety_smartyard_control?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC"
+$env:DB_USERNAME="admin123"
+$env:DB_PASSWORD="admin123"
 ```
 
 Gradle Wrapper를 추가하거나 IntelliJ에서 Gradle 프로젝트로 열어 실행하면 됩니다.
