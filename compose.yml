@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: safety-ai-mysql
+    environment:
+      MYSQL_DATABASE: safety_smartyard_control
+      MYSQL_USER: admin123
+      MYSQL_PASSWORD: admin123
+      MYSQL_ROOT_PASSWORD: local_root_only
+      TZ: UTC
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-plocal_root_only"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:

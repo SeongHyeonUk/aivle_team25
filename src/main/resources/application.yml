@@ -3,10 +3,10 @@ spring:
     name: safety-ai-control
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/safety_ai_control}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/safety_smartyard_control?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
+    username: ${DB_USERNAME:admin123}
+    password: ${DB_PASSWORD:admin123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:

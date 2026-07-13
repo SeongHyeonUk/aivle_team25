@@ -6,7 +6,7 @@
 - 기존 ERD의 주요 엔티티가 빠지지 않았는지 확인
 - FK 참조 대상 테이블이 생성 순서상 먼저 존재하는지 확인
 - 인덱스가 실제 존재하는 테이블/컬럼을 참조하는지 확인
-- PostgreSQL에서 문제가 될 수 있는 제약조건을 확인
+- MySQL 8에서 문제가 될 수 있는 제약조건을 확인
 
 ## 구조 검증 결과
 
@@ -15,13 +15,13 @@
 - FK 참조 대상 테이블/컬럼: 이상 없음
 - FK 생성 순서: 이상 없음
 - 인덱스 대상 테이블/컬럼: 이상 없음
-- 로컬 `psql` 실행 검증: `psql` 명령이 설치되어 있지 않아 미실행
+- 로컬 `mysql` 실행 검증: MySQL 서버와 CLI가 설치되어 있지 않아 미실행
 
 ## 반영한 수정
 
 - `user_roles`의 `site_id`는 전역 권한일 때 `NULL`이 될 수 있으므로 복합 PK에서 제외했습니다.
-- 대신 `user_roles.id`를 PK로 두고, `site_id IS NULL` / `site_id IS NOT NULL` 기준 partial unique index를 분리했습니다.
-- 기존 `CREATE EXTENSION IF NOT EXISTS pgcrypto;`는 현재 스키마에서 쓰는 함수가 없어 제거했습니다.
+- MySQL의 UNIQUE 인덱스가 여러 `NULL`을 허용하는 특성을 보완하기 위해 `COALESCE(site_id, 0)` 생성 컬럼과 유니크 제약을 사용했습니다.
+- MySQL이 컬럼 정의 안의 인라인 `REFERENCES`를 강제하지 않으므로 모든 관계를 명시적 `FOREIGN KEY` 제약으로 변환했습니다.
 - 각 테이블 블록에 `[CORE]`, `[FULL]` 주석을 달았습니다.
 - `[FULL]` 테이블에는 어떤 기능 때문에 필요한지 SQL 주석으로 설명을 붙였습니다.
 
@@ -47,7 +47,7 @@
 ## 설계상 주의할 점
 
 - MVP만 구현한다면 `[FULL]` 테이블은 일부 생략해도 됩니다.
-- `JSONB` 컬럼은 모델 출력, ROI polygon, bbox, 이벤트 payload처럼 구조가 바뀔 수 있는 데이터에 사용했습니다.
+- `JSON` 컬럼은 모델 출력, ROI polygon, bbox, 이벤트 payload처럼 구조가 바뀔 수 있는 데이터에 사용했습니다.
 - `model_runs.input_ref_id`는 여러 테이블을 참조할 수 있는 범용 ID라 FK를 걸지 않았습니다.
 - `safety_events`는 사용자 신고와 AI 탐지 이벤트를 통합하는 테이블입니다.
 - `risk_scores`는 허가서, 블록, 위험구역, 이벤트 중 하나 이상과 연결될 수 있게 FK를 nullable로 열어두었습니다.
