@@ -101,6 +101,40 @@ CREATE TABLE files (
   CONSTRAINT fk_files_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id)
 );
 
+CREATE TABLE board_posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  author_id BIGINT NOT NULL,
+  category VARCHAR(50) NOT NULL DEFAULT 'general',
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  view_count INT NOT NULL DEFAULT 0,
+  status VARCHAR(30) NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_board_posts_author_id FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE board_post_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT NOT NULL,
+  author_id BIGINT NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'published',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_board_post_comments_post_id FOREIGN KEY (post_id) REFERENCES board_posts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_board_post_comments_author_id FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE board_post_files (
+  post_id BIGINT NOT NULL,
+  file_id BIGINT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (post_id, file_id),
+  CONSTRAINT fk_board_post_files_post_id FOREIGN KEY (post_id) REFERENCES board_posts(id) ON DELETE CASCADE,
+  CONSTRAINT fk_board_post_files_file_id FOREIGN KEY (file_id) REFERENCES files(id)
+);
+
 
 -- =========================================================
 -- [CORE] 현장 / 블록 / 위험구역 / 카메라
@@ -560,3 +594,4 @@ CREATE INDEX idx_safety_events_status_time ON safety_events(status, event_time D
 CREATE INDEX idx_vision_detections_time ON vision_detections(detected_at DESC);
 CREATE INDEX idx_risk_scores_created ON risk_scores(created_at DESC);
 CREATE INDEX idx_notifications_user_status ON notifications(user_id, status);
+CREATE INDEX idx_board_posts_status_time ON board_posts(status, created_at DESC);
