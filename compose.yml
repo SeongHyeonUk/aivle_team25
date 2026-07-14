@@ -9,9 +9,9 @@ services:
       MYSQL_ROOT_PASSWORD: local_root_only
       TZ: UTC
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mysql-signup-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-plocal_root_only"]
       interval: 5s
@@ -19,4 +19,4 @@ services:
       retries: 20
 
 volumes:
-  mysql-data:
+  mysql-signup-data:
