@@ -1,0 +1,138 @@
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.login-page {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.login-wrap {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(20px, 2.4vw, 42px);
+}
+
+.login-card,
+.register-card {
+  max-width: 100%;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.secondary-auth-btn {
+  height: 53px;
+  border: 1px solid var(--orange);
+  background: #081522;
+  color: #f1f6fa;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-btn:disabled {
+  cursor: not-allowed;
+  background: linear-gradient(90deg, #354453, #2b3946);
+  color: #718091;
+  opacity: .72;
+}
+
+.register-card {
+  width: min(100%, 610px);
+}
+
+.register-card .login-head {
+  margin-bottom: 26px;
+}
+
+.register-row {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+}
+
+.register-row > label {
+  margin-bottom: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.register-row .input-box,
+.register-row .input-box input {
+  width: 100%;
+  min-width: 0;
+}
+
+.employee-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 96px;
+}
+
+.username-row {
+  grid-template-columns: minmax(0, 1fr) 96px;
+  margin-top: 17px;
+}
+
+.password-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 17px;
+}
+
+.verify-btn {
+  height: 50px;
+  border: 1px solid var(--orange);
+  background: #ff74170a;
+  color: var(--orange);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.verify-btn.verified {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: #30c6f20a;
+}
+
+.verify-btn svg {
+  width: 14px;
+}
+
+.field-check {
+  color: var(--cyan);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .employee-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .employee-row .verify-btn {
+    grid-column: 1 / -1;
+  }
+
+  .username-row {
+    grid-template-columns: 1fr 90px;
+  }
+
+  .password-row {
+    grid-template-columns: 1fr;
+  }
+}

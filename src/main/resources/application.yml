@@ -25,3 +25,7 @@ server:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  bootstrap-admin:
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    name: ${BOOTSTRAP_ADMIN_NAME:관리자}
