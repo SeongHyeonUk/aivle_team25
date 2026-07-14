@@ -3,7 +3,7 @@ spring:
     name: safety-ai-control
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/safety_smartyard_control?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
+    url: ${DB_URL:jdbc:mysql://localhost:3307/safety_smartyard_control?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
     username: ${DB_USERNAME:admin123}
     password: ${DB_PASSWORD:admin123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -25,3 +25,7 @@ server:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  bootstrap-admin:
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    name: ${BOOTSTRAP_ADMIN_NAME:관리자}
