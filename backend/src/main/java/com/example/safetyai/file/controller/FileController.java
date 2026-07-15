@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -32,6 +33,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
+    private static final long MAX_SAFETY_REPORT_IMAGE_SIZE = 10L * 1024L * 1024L;
+    private static final Set<String> SAFETY_REPORT_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
+
     private final JdbcTemplate jdbcTemplate;
     private final AuthService authService;
     private final Path uploadDir;
@@ -49,6 +53,7 @@ public class FileController {
         @RequestParam(defaultValue = "document") String fileType
     ) throws IOException {
         long userId = authService.requireUserId(authorization);
+        validateUpload(file, fileType);
         Files.createDirectories(uploadDir);
         String storageName = UUID.randomUUID() + "-" + safeName(file.getOriginalFilename());
         Path target = uploadDir.resolve(storageName).normalize();
@@ -100,5 +105,20 @@ public class FileController {
             return "upload.bin";
         }
         return originalName.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
+    private void validateUpload(MultipartFile file, String fileType) {
+        if (file.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "첨부할 파일을 선택해 주세요.");
+        }
+        if (!"safety_report".equals(fileType)) {
+            return;
+        }
+        if (file.getSize() > MAX_SAFETY_REPORT_IMAGE_SIZE) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "위험 신고 사진은 10MB 이하만 업로드할 수 있습니다.");
+        }
+        if (!SAFETY_REPORT_IMAGE_TYPES.contains(file.getContentType())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "위험 신고 사진은 JPG 또는 PNG 형식만 지원합니다.");
+        }
     }
 }

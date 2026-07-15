@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity, AlertTriangle, ArrowLeft, BarChart3, Bell, Building2, Camera,
@@ -31,9 +31,10 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 async function apiRequest(path, options = {}) {
   let response;
   try {
+    const isFormData = options.body instanceof FormData;
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      headers: { ...(!isFormData ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) },
     });
   } catch {
     throw new Error("백엔드 서버에 연결할 수 없습니다. MySQL과 Spring Boot 실행 상태를 확인해 주세요.");
@@ -171,13 +172,13 @@ function Dashboard({ session, onLogout, notify }) {
   return <div className="app-shell">
     <aside className={mobile?"sidebar open":"sidebar"}><div className="side-brand"><Factory/><div><b>SMART SHIPYARD</b><span>AI SAFETY PLATFORM</span></div><button onClick={()=>setMobile(false)}><X/></button></div><div className="site-select"><Building2/><div><span>현재 사업장</span><b>거제 스마트 조선소</b></div><ChevronDown/></div><nav>{nav.map(([id,label,Icon])=><button key={id} className={page===id?"active":""} onClick={()=>{setPage(id);setMobile(false)}}><Icon/>{label}{id==="monitoring"&&<i>3</i>}</button>)}</nav><div className="side-bottom"><div className="user-chip"><div>{session.name[0]}</div><span><b>{session.name}</b><small>{session.role==="worker"?"현장 작업자 · 조립 2팀":"안전관리자 · 안전환경팀"}</small></span></div><button className="logout" onClick={onLogout}><LogOut/>로그아웃</button></div></aside>
     <main className="workspace"><header className="topbar"><button className="menu-btn" onClick={()=>setMobile(true)}><Menu/></button><div><span>거제 스마트 조선소 / {session.role==="worker"?"현장 작업자":"관리자"}</span><h1>{title}</h1></div><div className="top-actions"><div className="live"><i/> 시스템 정상</div><button><Bell/><i>3</i></button><div className="avatar">{session.name[0]}</div></div></header>
-      <section className="content"><Page page={page} role={session.role} notify={notify}/></section>
+      <section className="content"><Page page={page} role={session.role} session={session} notify={notify}/></section>
     </main>
   </div>;
 }
 
-function Page({page,role,notify}) {
-  if (role === "worker") return page==="tbm"?<TBM notify={notify}/>:page==="checklist"?<Checklist notify={notify}/>:page==="report"?<Report notify={notify}/>:<WorkerHome notify={notify}/>;
+function Page({page,role,session,notify}) {
+  if (role === "worker") return page==="tbm"?<TBM notify={notify}/>:page==="checklist"?<Checklist notify={notify}/>:page==="report"?<Report session={session} notify={notify}/>:<WorkerHome notify={notify}/>;
   return page==="monitoring"?<Monitoring notify={notify}/>:page==="permits"?<Permits notify={notify}/>:page==="risk"?<Risk/>:page==="standards"?<Standards notify={notify}/>:page==="audit"?<Audit/>:<AdminHome/>;
 }
 
@@ -187,7 +188,110 @@ function TBM({notify}) { const [recording,setRecording]=useState(false); const [
 
 function Checklist({notify}) { const [done,setDone]=useState([true,true,false,false]); const items=["안전벨트 및 생명줄 체결 상태 확인","작업구역 하부 출입 통제선 설치","화기감시자 배치 및 소화기 비치","이동식 사다리 고정 상태 확인"]; return <><SectionHead eyebrow="PERMIT CONDITIONS" title="조치 체크리스트" desc="허가서 승인 조건에 따라 작업 전 조치를 완료해 주세요."/><div className="single-panel"><div className="progress-head"><div><span>PTW-2026-0713-018</span><h3>B-07 블록 상부 배관 조립 작업</h3></div><b>{done.filter(Boolean).length} / 4 완료</b></div><div className="progress"><i style={{width:`${done.filter(Boolean).length*25}%`}}/></div><div className="check-list">{items.map((x,i)=><button key={x} className={done[i]?"done":""} onClick={()=>setDone(done.map((v,j)=>j===i?!v:v))}><span>{done[i]?<Check/>:i+1}</span><div><b>{x}</b><small>{done[i]?"확인 완료 · 김현수":"현장 확인 후 체크해 주세요"}</small></div><Camera/></button>)}</div><button className="primary-btn submit-check" onClick={()=>notify(done.every(Boolean)?"체크리스트가 제출되었습니다.":"모든 항목을 먼저 확인해 주세요.")}>체크리스트 제출</button></div></>; }
 
-function Report({notify}) { const [type,setType]=useState("추락 위험"); return <><SectionHead eyebrow="QUICK SAFETY REPORT" title="현장 위험 신고" desc="발견한 위험을 사진 또는 음성으로 즉시 알려주세요."/><div className="report-layout"><div className="single-panel"><h3>위험 유형</h3><div className="chip-row">{["추락 위험","보호구 미착용","화재 위험","장비 이상","기타"].map(x=><button className={type===x?"active":""} onClick={()=>setType(x)} key={x}>{x}</button>)}</div><h3>사진 · 음성 첨부</h3><div className="upload-zone"><UploadCloud/><b>현장 사진을 끌어놓거나 촬영하세요</b><span>JPG, PNG · 최대 10MB</span><button className="outline-btn"><Camera/>카메라 열기</button></div><label className="text-label">상세 내용<textarea defaultValue="B-07 블록 3층 통로 난간 일부가 흔들립니다. 접근 통제가 필요합니다."/></label><button className="danger-submit" onClick={()=>notify("위험 신고가 안전관리자에게 전송되었습니다.")}><Siren/>긴급 위험 신고 전송</button></div><aside className="report-guide"><ShieldCheck/><h3>신고 즉시 처리됩니다</h3><p>긴급 신고는 관리자 관제 화면과 현장 담당자 모바일로 동시에 전송됩니다.</p><ol><li><b>1분 이내</b> 접수 알림</li><li><b>5분 이내</b> 담당자 배정</li><li>처리 결과 실시간 공유</li></ol></aside></div></>; }
+const riskReportTypes = [
+  ["FALL_HEIGHT", "추락·고소작업 위험"],
+  ["PPE_MISSING", "보호구 미착용"],
+  ["FIRE_EXPLOSION", "화재·폭발 위험"],
+  ["EQUIPMENT_FAILURE", "장비·설비 이상"],
+  ["COLLISION_PINCH", "충돌·협착 위험"],
+  ["FALLING_OBJECT_LIFTING", "낙하물·중량물 위험"],
+  ["ELECTRICAL", "감전·전기 위험"],
+  ["ASPHYXIATION_GAS", "질식·유해가스 위험"],
+  ["HAZARDOUS_LEAK", "위험물·화학물질 누출"],
+  ["DANGER_ZONE_ACCESS", "위험구역 접근"],
+  ["HOUSEKEEPING", "통로·정리정돈 불량"],
+  ["OTHER", "기타"],
+];
+
+function Report({notify,session}) {
+  const [type,setType]=useState("FALL_HEIGHT");
+  const [photo,setPhoto]=useState(null);
+  const [description,setDescription]=useState("");
+  const [reports,setReports]=useState([]);
+  const [loadingReports,setLoadingReports]=useState(true);
+  const [submitting,setSubmitting]=useState(false);
+  const [preview,setPreview]=useState("");
+  const authorization = { Authorization:`Bearer ${session.token}` };
+
+  const loadReports = async () => {
+    setLoadingReports(true);
+    try {
+      setReports(await apiRequest("/api/safety-events/my", { headers:authorization }));
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  useEffect(() => { loadReports(); }, []);
+  useEffect(() => {
+    if (!photo) { setPreview(""); return undefined; }
+    const nextPreview = URL.createObjectURL(photo);
+    setPreview(nextPreview);
+    return () => URL.revokeObjectURL(nextPreview);
+  }, [photo]);
+
+  const selectPhoto = (file) => {
+    if (!file) return;
+    if (!["image/jpeg","image/png"].includes(file.type)) return notify("JPG 또는 PNG 사진만 첨부할 수 있습니다.");
+    if (file.size > 10 * 1024 * 1024) return notify("사진은 10MB 이하만 첨부할 수 있습니다.");
+    setPhoto(file);
+  };
+
+  const submit = async () => {
+    if (!photo) return notify("현장 사진을 첨부해 주세요.");
+    if (!description.trim()) return notify("상세 내용을 입력해 주세요.");
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", photo);
+      formData.append("fileType", "safety_report");
+      const uploaded = await apiRequest("/api/files", { method:"POST", headers:authorization, body:formData });
+      const created = await apiRequest("/api/safety-events", {
+        method:"POST",
+        headers:authorization,
+        body:JSON.stringify({ eventType:type, fileId:uploaded.id, description:description.trim() }),
+      });
+      notify(`${created.reportNo} 위험 신고가 접수되었습니다.`);
+      setPhoto(null);
+      setDescription("");
+      await loadReports();
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const latest = reports[0];
+  return <>
+    <SectionHead eyebrow="QUICK SAFETY REPORT" title="현장 위험 신고" desc="위험 유형을 선택하고 현장 사진과 상세 내용을 접수해 주세요."/>
+    <div className="report-layout">
+      <div className="single-panel">
+        <h3>위험 유형</h3>
+        <div className="chip-row">{riskReportTypes.map(([code,label])=><button type="button" className={type===code?"active":""} onClick={()=>setType(code)} key={code}>{label}</button>)}</div>
+        <h3>사진 첨부</h3>
+        <div className={preview?"upload-zone has-preview":"upload-zone"} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();selectPhoto(e.dataTransfer.files[0]);}}>
+          {preview?<img src={preview} alt="위험 신고 사진 미리보기"/>:<><UploadCloud/><b>현장 사진을 끌어놓거나 촬영하세요</b><span>JPG, PNG · 최대 10MB</span></>}
+          <input id="risk-photo" type="file" accept="image/jpeg,image/png" capture="environment" onChange={e=>selectPhoto(e.target.files[0])}/>
+          <label htmlFor="risk-photo" className="outline-btn upload-button"><Camera/>{photo?"사진 변경":"폴더 열기"}</label>
+          {photo&&<small className="selected-file">{photo.name}</small>}
+        </div>
+        <label className="text-label">상세 내용<textarea value={description} maxLength={2000} placeholder="위험 상황과 위치를 구체적으로 작성해 주세요." onChange={e=>setDescription(e.target.value)}/></label>
+        <button className="danger-submit" disabled={submitting} onClick={submit}><Siren/>{submitting?"신고 접수 중...":"위험 신고 접수"}</button>
+      </div>
+      <aside className="report-guide report-status">
+        <ShieldCheck/>
+        <h3>내 신고 현황</h3>
+        {loadingReports?<p>신고 내역을 불러오는 중입니다.</p>:<>
+          <div className="report-count"><span>최근 신고</span><b>{reports.length}<small>건</small></b></div>
+          {latest?<div className="latest-report"><span className="badge cyan">접수 완료</span><b>{latest.title}</b><small>{latest.reportNo}</small><p>{latest.description}</p></div>:<div className="empty-report">접수한 위험 신고가 없습니다.</div>}
+        </>}
+      </aside>
+    </div>
+  </>;
+}
 
 function AdminHome() { return <><div className="welcome admin"><div><span className="eyebrow">CONTROL CENTER · LIVE</span><h2>조선소 통합 안전 현황</h2><p>거제 사업장 전체 구역의 실시간 위험 신호입니다.</p></div><div className="updated"><i/>마지막 갱신 10:45:18</div></div><div className="stat-grid"><Stat icon={Camera} label="연결 카메라" value="42 / 44" sub="2대 점검 중"/><Stat icon={AlertTriangle} label="오늘 감지 이벤트" value="18건" sub="긴급 1 · 주의 5" tone="orange"/><Stat icon={FileText} label="허가서 승인 대기" value="7건" sub="충돌 의심 2건" tone="cyan"/><Stat icon={Activity} label="전체 위험 지수" value="23 · 낮음" sub="어제보다 6 감소" tone="green"/></div><div className="admin-grid"><Panel title="실시간 사업장 맵" action="2.5D 위험맵"><div className="yard-map"><div className="map-grid"/>{[["A-12",22,22,"low"],["B-07",57,35,"high"],["C-03",73,64,"mid"],["D-02",35,72,"low"]].map(([n,x,y,c])=><div className={`map-pin ${c}`} style={{left:`${x}%`,top:`${y}%`}} key={n}><i/>{n}<small>{c==="high"?"위험 72":c==="mid"?"주의 46":"안전"}</small></div>)}</div></Panel><Panel title="실시간 이벤트" action="전체보기">{incidents.map(x=><div className="event-row" key={x.time+x.title}><span className={x.color}><AlertTriangle/></span><div><b>{x.title}</b><small>{x.meta}</small></div><time>{x.time}</time></div>)}</Panel></div><div className="two-col"><Panel title="위험도 추이" action="최근 7일"><div className="mini-chart">{[38,52,44,61,35,29,23].map((x,i)=><div key={i}><i style={{height:x*1.5}}/><span>{["월","화","수","목","금","토","오늘"][i]}</span></div>)}</div></Panel><Panel title="허가서 분석 현황" action="금일 24건"><div className="donut-wrap"><div className="donut"><span><b>24</b>전체</span></div><ul><li><i className="cyan"/>승인 완료 <b>15</b></li><li><i className="orange"/>검토 대기 <b>7</b></li><li><i className="red"/>충돌 의심 <b>2</b></li></ul></div></Panel></div></>; }
 
