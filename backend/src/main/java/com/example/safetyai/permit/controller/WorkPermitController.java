@@ -1,6 +1,7 @@
 package com.example.safetyai.permit.controller;
 
 import com.example.safetyai.auth.service.AuthService;
+import com.example.safetyai.common.exception.ApiException;
 import com.example.safetyai.common.util.JdbcInsert;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -96,7 +98,19 @@ public class WorkPermitController {
         );
         if (request.fileIds() != null) {
             for (Long fileId : request.fileIds()) {
-                jdbcTemplate.update("INSERT INTO work_permit_files (permit_id, file_id, purpose) VALUES (?, ?, 'permit')", id, fileId);
+                int linked = jdbcTemplate.update(
+                    """
+                        INSERT INTO work_permit_files (permit_id, file_id, purpose)
+                        SELECT ?, id, 'permit' FROM files
+                        WHERE id = ? AND uploaded_by = ? AND file_type = 'permit'
+                        """,
+                    id,
+                    fileId,
+                    userId
+                );
+                if (linked != 1) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "업로드한 허가서 파일을 찾을 수 없습니다.");
+                }
             }
         }
         return Map.of("id", id);

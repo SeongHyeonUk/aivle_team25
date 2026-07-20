@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
+<<<<<<< Updated upstream
 import {
   Activity,
   BarChart3,
@@ -630,3 +631,11 @@ function Feature({ icon: Icon, title, text }) {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
+=======
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import "./styles.css";
+import "./auth.css";
+
+createRoot(document.getElementById("root")).render(<BrowserRouter><App/></BrowserRouter>);
+>>>>>>> Stashed changes
