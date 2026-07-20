@@ -1,0 +1,87 @@
+package com.example.safetyai.auth.config;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.example.safetyai.auth.security.BearerTokenAuthenticationFilter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+
+@WebMvcTest(controllers = SecurityTestController.class)
+@Import({SecurityConfig.class, SecurityTestController.class})
+class SecurityAuthorizationTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private BearerTokenAuthenticationFilter bearerTokenAuthenticationFilter;
+
+    @MockBean
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void letMockBearerFilterContinueTheChain() throws Exception {
+        doAnswer(invocation -> {
+            invocation.<jakarta.servlet.FilterChain>getArgument(2).doFilter(
+                invocation.getArgument(0),
+                invocation.getArgument(1)
+            );
+            return null;
+        }).when(bearerTokenAuthenticationFilter).doFilter(any(), any(), any());
+    }
+
+    @Test
+    void anonymousUserCannotCallProtectedApi() throws Exception {
+        mockMvc.perform(get("/api/master/sites"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void workerCanReadMasterDataButCannotCreateIt() throws Exception {
+        mockMvc.perform(get("/api/master/sites").with(user("worker").roles("WORKER")))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/master/sites")
+                .with(user("worker").roles("WORKER"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanCreateMasterData() throws Exception {
+        mockMvc.perform(post("/api/master/sites")
+                .with(user("admin").roles("ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void onlyOperationalRolesCanReadDashboard() throws Exception {
+        mockMvc.perform(get("/api/dashboard/summary").with(user("worker").roles("WORKER")))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/dashboard/summary").with(user("manager").roles("SAFETY_MANAGER")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void aiServiceCanSubmitButCannotReadAiResults() throws Exception {
+        mockMvc.perform(post("/api/ai/model-runs").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/ai/model-runs").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isForbidden());
+    }
+}

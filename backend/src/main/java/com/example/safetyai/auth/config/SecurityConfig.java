@@ -41,6 +41,22 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/employees/verify", "/api/auth/usernames/*/availability").permitAll()
+
+                // Master data may be read by signed-in users, but only administrators may change it.
+                .requestMatchers(HttpMethod.POST, "/api/master/**").hasRole("ADMIN")
+
+                // Operational dashboards and the complete event feed contain site-wide information.
+                .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/api/safety-events").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+
+                // AI_SERVICE is a machine account used only to submit model outputs.
+                .requestMatchers(HttpMethod.POST, "/api/ai/**").hasAnyRole("ADMIN", "AI_SERVICE")
+                .requestMatchers(HttpMethod.GET, "/api/ai/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/risks/scores").hasAnyRole("ADMIN", "AI_SERVICE")
+                .requestMatchers(HttpMethod.GET, "/api/risks/scores").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+
+                // Reports, permits, simulations, files, and board features remain available to every
+                // authenticated account. Resource-level ownership rules are handled separately.
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions
