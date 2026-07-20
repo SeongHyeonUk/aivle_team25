@@ -1,14 +1,10 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Activity, BarChart3, Camera, Check, Eye, EyeOff, Factory, FileSearch, HardHat, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import Feature from "../../components/common/Feature";
+import { apiRequest } from "../../api/client";
 
-function Login({ onLogin, notify }) {
+function Login({ initialUsername, onLogin, onRegister, notify }) {
   const [showPassword, setShowPassword] = useState(false);
-<<<<<<< Updated upstream
-  const [role, setRole] = useState("worker");
-  const [form, setForm] = useState({ id: "SS-24018", password: "safety2026" });
-  const submit = (e) => { e.preventDefault(); if (!form.id || !form.password) return notify("사번과 비밀번호를 입력해 주세요."); onLogin({ role, name: role === "worker" ? "김현수" : "박서진" }); };
-=======
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ username: initialUsername || "", password: "" });
   const submit = async (e) => {
@@ -22,7 +18,6 @@ function Login({ onLogin, notify }) {
       onLogin({ token: result.accessToken, role: isSupervisor ? "admin" : "worker", roles, name: result.user.name, username: result.user.username });
     } catch (error) { notify(error.message); } finally { setSubmitting(false); }
   };
->>>>>>> Stashed changes
   return <main className="login-page">
     <section className="visual-panel">
       <header className="brand"><Factory size={34}/><span>SMART SHIPYARD</span><em>AI SAFETY</em></header>
@@ -33,19 +28,10 @@ function Login({ onLogin, notify }) {
     </section>
     <section className="login-wrap"><form className="login-card" onSubmit={submit}>
       <div className="login-head"><div className="shield-icon"><LockKeyhole/></div><div><span className="eyebrow">SECURE ACCESS</span><h2>안전관리 시스템 로그인</h2><p>허가된 임직원만 접속할 수 있습니다.</p></div></div>
-<<<<<<< Updated upstream
-      <label><span>사번</span><div className="input-box"><UserRound/><input value={form.id} onChange={e=>setForm({...form,id:e.target.value})} placeholder="사번을 입력하세요"/></div></label>
-      <label><span>비밀번호</span><div className="input-box"><LockKeyhole/><input type={showPassword?"text":"password"} value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/><button type="button" className="icon-btn" onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff/>:<Eye/>}</button></div></label>
-      <div className="role-label">가입 역할</div><div className="role-choice"><button type="button" className={role==="worker"?"active":""} onClick={()=>setRole("worker")}><HardHat/><span><b>현장 작업자</b><small>TBM · 체크리스트 · 신고</small></span>{role==="worker"&&<Check/>}</button><button type="button" className={role==="admin"?"active":""} onClick={()=>setRole("admin")}><ShieldCheck/><span><b>관리자</b><small>관제 · 허가서 · 위험예측</small></span>{role==="admin"&&<Check/>}</button></div>
-      <button className="primary-btn" type="submit">시스템 접속 <span>→</span></button>
-      <div className="login-note"><ShieldCheck/>JWT 보안 인증 · 역할 기반 접근 제어(RBAC)</div>
-      <div className="demo-hint"><b>목업 계정</b><span>입력된 샘플 계정으로 바로 접속할 수 있습니다.</span></div>
-=======
       <label><span>아이디</span><div className="input-box"><UserRound/><input autoComplete="username" value={form.username} onChange={e=>setForm({...form,username:e.target.value})} placeholder="아이디를 입력하세요"/></div></label>
       <label><span>비밀번호</span><div className="input-box"><LockKeyhole/><input type={showPassword?"text":"password"} value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="비밀번호를 입력하세요"/><button type="button" className="icon-btn" onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff/>:<Eye/>}</button></div></label>
       <div className="auth-actions"><button type="button" className="secondary-auth-btn" onClick={onRegister}>회원가입</button><button className="primary-btn" type="submit" disabled={submitting}>{submitting?"접속 중...":"시스템 접속 →"}</button></div>
       <div className="login-note"><ShieldCheck/>Spring Security · 역할 기반 접근 제어(RBAC)</div>
->>>>>>> Stashed changes
     </form></section>
   </main>;
 }
