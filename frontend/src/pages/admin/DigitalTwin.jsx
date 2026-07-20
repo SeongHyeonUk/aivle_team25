@@ -99,7 +99,7 @@ function YardView({ snapshot, onOpenShop, onUnavailable }) {
     </div>
     <div className="yard-control-layout">
       <section className="twin-panel yard-map-panel premium-panel">
-        <div className="twin-panel-head"><div><b>거제 스마트 야드 운영 모델</b><span>카메라를 회전하고 시설을 선택해 공정 내부로 진입합니다.</span></div><i className="live-dot">LIVE</i></div>
+        <div className="twin-panel-head"><div><span>카메라를 회전하고 시설을 선택해 공정 내부로 진입합니다.</span></div><i className="live-dot">LIVE</i></div>
         <YardTwinScene facilities={snapshot.facilities} onOpenShop={onOpenShop} onUnavailable={onUnavailable}/>
       </section>
       <aside className="twin-panel facility-list-panel premium-panel">
