@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Eye, FileText, Plus, Search, Sparkles, Trash2, UploadCloud, X } from "lucide-react";
 import { apiBlob, apiRequest } from "../../api/client";
 import { SectionHead } from "../../components/common";
