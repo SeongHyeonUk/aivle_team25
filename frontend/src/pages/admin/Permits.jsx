@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Eye, FileText, Plus, Search, Sparkles, UploadCloud, X } from "lucide-react";
-import { apiRequest } from "../../api/client";
+import { AlertTriangle, Check, Eye, FileText, Plus, Search, Sparkles, Trash2, UploadCloud, X } from "lucide-react";
+import { apiBlob, apiRequest } from "../../api/client";
 import { SectionHead } from "../../components/common";
 
 const emptyForm = () => ({
@@ -26,6 +26,9 @@ function Permits({ notify, session }) {
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const authorization = useMemo(() => ({ Authorization: `Bearer ${session.token}` }), [session.token]);
 
   const loadPermits = async (preferredId) => {
@@ -54,6 +57,10 @@ function Permits({ notify, session }) {
       .then(setDetail)
       .catch(error => notify(error.message));
   }, [selectedId]);
+
+  useEffect(() => () => {
+    if (preview?.url) URL.revokeObjectURL(preview.url);
+  }, [preview?.url]);
 
   const filtered = permits.filter(permit =>
     `${permit.permit_no || ""} ${permit.work_title || ""}`.toLowerCase().includes(search.toLowerCase())
@@ -105,6 +112,39 @@ function Permits({ notify, session }) {
     }
   };
 
+  const openPreview = async (attachedFile) => {
+    setPreview({ name: attachedFile.original_name, url: null });
+    setPreviewLoading(true);
+    try {
+      const blob = await apiBlob(`/api/files/${attachedFile.id}/download`, { headers: authorization });
+      setPreview(current => current ? { ...current, url: URL.createObjectURL(blob) } : current);
+    } catch (error) {
+      setPreview(null);
+      notify(error.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => setPreview(null);
+
+  const deletePermit = async () => {
+    if (!detail || deleting) return;
+    if (!window.confirm(`${detail.permit_no} 허가서를 삭제하시겠습니까?\n연결된 분석 결과도 함께 삭제됩니다.`)) return;
+    setDeleting(true);
+    try {
+      await apiRequest(`/api/work-permits/${detail.id}`, { method: "DELETE", headers: authorization });
+      closePreview();
+      setDetail(null);
+      await loadPermits();
+      notify(`${detail.permit_no} 허가서가 삭제되었습니다.`);
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const attachedFile = detail?.files?.[0];
   return <>
     <SectionHead eyebrow="AI PERMIT ANALYSIS" title="작업 허가서 분석" desc="SIMOPS 충돌과 유사 사고를 분석해 승인 조건을 추천합니다." action={<button className="primary-small" onClick={() => setModalOpen(true)}><Plus/>허가서 등록</button>}/>
@@ -115,10 +155,10 @@ function Permits({ notify, session }) {
       </div>
       <div className="analysis-panel">
         {detail ? <><div className="analysis-head"><div><span>{detail.permit_no}</span><h3>{detail.work_title}</h3></div><span className="ai-chip"><Sparkles/>분석 대기</span></div>
-          {attachedFile ? <div className="doc-preview"><FileText/><div><b>{attachedFile.original_name}</b><span>{formatSize(attachedFile.file_size)}</span></div><button title="파일 정보" onClick={() => notify(`${attachedFile.original_name} · ${formatSize(attachedFile.file_size)}`)}><Eye/></button></div> : <div className="doc-preview"><FileText/><div><b>첨부 파일 없음</b><span>허가서 파일이 연결되지 않았습니다.</span></div></div>}
+          {attachedFile ? <div className="doc-preview"><FileText/><div><b>{attachedFile.original_name}</b><span>{formatSize(attachedFile.file_size)}</span></div><button type="button" title="허가서 미리보기" aria-label={`${attachedFile.original_name} 미리보기`} onClick={() => openPreview(attachedFile)}><Eye/></button></div> : <div className="doc-preview"><FileText/><div><b>첨부 파일 없음</b><span>허가서 파일이 연결되지 않았습니다.</span></div></div>}
           <h4>SIMOPS 충돌 분석</h4><div className="collision"><AlertTriangle/><div><b>AI 분석을 기다리고 있습니다</b><p>등록된 허가서를 기준으로 시간·공간·작업 유형을 분석합니다.</p></div></div>
           <h4>AI 추천 승인 조건</h4><div className="permit-empty">분석이 완료되면 추천 승인 조건이 표시됩니다.</div>
-          <div className="approve-actions"><button className="outline-btn">보완 요청</button><button className="primary-small" onClick={() => notify("분석 완료 후 승인할 수 있습니다.")}><Check/>조건부 승인</button></div></> : <div className="permit-empty large">왼쪽에서 허가서를 선택하거나 새 허가서를 등록하세요.</div>}
+          <div className="approve-actions"><button className="delete-permit-btn" type="button" disabled={deleting} onClick={deletePermit}><Trash2/>{deleting ? "삭제 중..." : "허가서 삭제"}</button><button className="outline-btn">보완 요청</button><button className="primary-small" onClick={() => notify("분석 완료 후 승인할 수 있습니다.")}><Check/>조건부 승인</button></div></> : <div className="permit-empty large">왼쪽에서 허가서를 선택하거나 새 허가서를 등록하세요.</div>}
       </div>
     </div>
     {modalOpen && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) closeModal(); }}>
@@ -134,6 +174,15 @@ function Permits({ notify, session }) {
         <div className={file ? "permit-upload selected" : "permit-upload"} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); selectFile(e.dataTransfer.files[0]); }}><UploadCloud/><b>{file ? file.name : "허가서 PDF를 끌어놓으세요"}</b><span>{file ? formatSize(file.size) : "PDF · 최대 10MB"}</span><input id="permit-file" type="file" accept="application/pdf,.pdf" onChange={e => selectFile(e.target.files[0])}/><label htmlFor="permit-file" className="outline-btn">파일 선택</label></div>
         <div className="modal-actions"><button type="button" className="outline-btn" onClick={closeModal}>취소</button><button className="primary-small" disabled={submitting}>{submitting ? "등록 중..." : "업로드 및 등록"}</button></div>
       </form>
+    </div>}
+    {preview && <div className="modal-backdrop preview-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) closePreview(); }}>
+      <section className="pdf-preview-modal" role="dialog" aria-modal="true" aria-labelledby="pdf-preview-title">
+        <div className="modal-head"><div><span>PERMIT DOCUMENT</span><h3 id="pdf-preview-title">{preview.name}</h3></div><button type="button" className="icon-btn" title="미리보기 닫기" onClick={closePreview}><X/></button></div>
+        <div className="pdf-preview-body">
+          {previewLoading && <div className="permit-empty large">허가서를 불러오는 중입니다.</div>}
+          {!previewLoading && preview.url && <iframe src={preview.url} title={`${preview.name} PDF 미리보기`}/>}
+        </div>
+      </section>
     </div>}
   </>;
 }
