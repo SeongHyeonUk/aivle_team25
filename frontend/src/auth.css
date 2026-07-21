@@ -47,6 +47,224 @@ body,
   opacity: .72;
 }
 
+.terms-banner {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 17px;
+  padding: 9px 12px;
+  border: 1px solid rgba(132, 164, 192, .14);
+  border-radius: 8px;
+  background: rgba(8, 21, 34, .72);
+  color: #7890a2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.terms-banner:hover {
+  border-color: rgba(48, 198, 242, .32);
+  color: var(--cyan);
+}
+
+.terms-banner > svg:first-child {
+  width: 17px;
+  flex: 0 0 auto;
+}
+
+.terms-banner > svg:last-child {
+  width: 15px;
+  margin-left: auto;
+}
+
+.terms-banner span,
+.terms-banner b,
+.terms-banner small {
+  display: block;
+}
+
+.terms-banner b {
+  color: #b5c5d0;
+  font-size: 10px;
+}
+
+.terms-banner small {
+  margin-top: 2px;
+  color: #60778a;
+  font-size: 8px;
+}
+
+.terms-consent {
+  min-height: 48px;
+  margin-top: 18px;
+  padding: 11px 13px;
+  border: 1px solid rgba(132, 164, 192, .17);
+  border-radius: 8px;
+  background: #081522;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.terms-consent label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.terms-consent input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--orange);
+}
+
+.terms-consent label span {
+  margin: 0;
+  color: #aabac6;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.terms-consent label b {
+  color: var(--orange);
+}
+
+.terms-consent > button {
+  flex: 0 0 auto;
+  padding: 3px 0;
+  border: 0;
+  border-bottom: 1px solid #668094;
+  background: transparent;
+  color: #8298a9;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.terms-modal-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 9, 15, .76);
+  backdrop-filter: blur(8px);
+}
+
+.terms-modal {
+  width: min(100%, 540px);
+  max-height: min(680px, calc(100vh - 40px));
+  overflow: auto;
+  padding: 25px;
+  border: 1px solid rgba(73, 154, 185, .3);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #0c2231, #07151f);
+  box-shadow: 0 30px 100px #000b;
+}
+
+.terms-modal header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(132, 164, 192, .16);
+}
+
+.terms-modal header span {
+  color: var(--cyan);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.terms-modal h3 {
+  margin: 5px 0 0;
+  font-size: 19px;
+}
+
+.terms-modal header button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(132, 164, 192, .2);
+  border-radius: 7px;
+  background: #081925;
+  color: #91a6b7;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.terms-modal header svg {
+  width: 16px;
+}
+
+.terms-modal-content {
+  padding: 10px 0 5px;
+  color: #aabac7;
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+.terms-modal-content h4 {
+  margin: 16px 0 5px;
+  color: #edf5f8;
+  font-size: 12px;
+}
+
+.terms-modal-content p {
+  margin: 5px 0;
+}
+
+.terms-modal-content dl {
+  margin: 8px 0;
+  border: 1px solid rgba(132, 164, 192, .13);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.terms-modal-content dl > div {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  border-bottom: 1px solid rgba(132, 164, 192, .13);
+}
+
+.terms-modal-content dl > div:last-child {
+  border-bottom: 0;
+}
+
+.terms-modal-content dt,
+.terms-modal-content dd {
+  margin: 0;
+  padding: 9px;
+}
+
+.terms-modal-content dt {
+  background: rgba(48, 198, 242, .05);
+  color: #d4e2e9;
+  font-weight: 700;
+}
+
+.terms-notice {
+  color: #7d93a4;
+  font-size: 9px;
+}
+
+.terms-modal-confirm {
+  width: 100%;
+  height: 43px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #ff7d20, #eb5d00);
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .register-card {
   width: min(100%, 610px);
 }
@@ -134,5 +352,17 @@ body,
 
   .password-row {
     grid-template-columns: 1fr;
+  }
+
+  .terms-consent {
+    align-items: flex-start;
+  }
+
+  .terms-modal {
+    padding: 19px;
+  }
+
+  .terms-modal-content dl > div {
+    grid-template-columns: 74px 1fr;
   }
 }
