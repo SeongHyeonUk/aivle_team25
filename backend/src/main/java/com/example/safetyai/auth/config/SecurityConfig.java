@@ -18,6 +18,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class SecurityConfig {
+    private static final String[] HUMAN_ROLES = {"WORKER", "SAFETY_MANAGER", "ADMIN"};
+
     private final BearerTokenAuthenticationFilter bearerTokenAuthenticationFilter;
 
     public SecurityConfig(BearerTokenAuthenticationFilter bearerTokenAuthenticationFilter) {
@@ -41,23 +43,34 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/employees/verify", "/api/auth/usernames/*/availability").permitAll()
+                .requestMatchers("/api/auth/logout").authenticated()
 
-                // Master data may be read by signed-in users, but only administrators may change it.
+                // Only administrators may change master data. Human accounts may read it.
                 .requestMatchers(HttpMethod.POST, "/api/master/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/master/**").hasAnyRole(HUMAN_ROLES)
 
-                // Operational dashboards and the complete event feed contain site-wide information.
+                // Operational dashboards and the complete event feed are management features.
                 .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/safety-events").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/api/safety-events/my").hasAnyRole(HUMAN_ROLES)
+                .requestMatchers(HttpMethod.POST, "/api/safety-events").hasAnyRole(HUMAN_ROLES)
+
+                // Safety managers create permits. Human accounts may read existing permits.
+                .requestMatchers(HttpMethod.POST, "/api/work-permits").hasRole("SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/api/work-permits", "/api/work-permits/**").hasAnyRole(HUMAN_ROLES)
+
+                // Board and file features are for interactive human accounts.
+                .requestMatchers("/api/board/**", "/api/files/**").hasAnyRole(HUMAN_ROLES)
 
                 // AI_SERVICE is a machine account used only to submit model outputs.
                 .requestMatchers(HttpMethod.POST, "/api/ai/**").hasAnyRole("ADMIN", "AI_SERVICE")
                 .requestMatchers(HttpMethod.GET, "/api/ai/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
                 .requestMatchers(HttpMethod.POST, "/api/risks/scores").hasAnyRole("ADMIN", "AI_SERVICE")
                 .requestMatchers(HttpMethod.GET, "/api/risks/scores").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/risks/simulations").hasAnyRole(HUMAN_ROLES)
 
-                // Reports, permits, simulations, files, and board features remain available to every
-                // authenticated account. Resource-level ownership rules are handled separately.
-                .anyRequest().authenticated()
+                // Every API must be explicitly assigned to a role above.
+                .anyRequest().denyAll()
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, exception) -> {

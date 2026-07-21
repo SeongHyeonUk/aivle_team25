@@ -45,18 +45,18 @@ GET  /api/board/posts/{id}                                   AUTHENTICATED
 POST /api/board/posts                                        AUTHENTICATED
 POST /api/board/posts/{id}/comments                          AUTHENTICATED
 
-GET  /api/master/sites                                       AUTHENTICATED
+GET  /api/master/sites                                       WORKER | SAFETY_MANAGER | ADMIN
 POST /api/master/sites                                       ADMIN
-GET  /api/master/blocks                                      AUTHENTICATED
-GET  /api/master/cameras                                     AUTHENTICATED
+GET  /api/master/blocks                                      WORKER | SAFETY_MANAGER | ADMIN
+GET  /api/master/cameras                                     WORKER | SAFETY_MANAGER | ADMIN
 
-GET  /api/work-permits                                       AUTHENTICATED
-GET  /api/work-permits/{id}                                  AUTHENTICATED
-POST /api/work-permits                                       AUTHENTICATED
+GET  /api/work-permits                                       WORKER | SAFETY_MANAGER | ADMIN
+GET  /api/work-permits/{id}                                  WORKER | SAFETY_MANAGER | ADMIN
+POST /api/work-permits                                       SAFETY_MANAGER
 
 GET  /api/safety-events                                      ADMIN | SAFETY_MANAGER
-GET  /api/safety-events/my                                   AUTHENTICATED
-POST /api/safety-events                                      AUTHENTICATED
+GET  /api/safety-events/my                                   WORKER | SAFETY_MANAGER | ADMIN
+POST /api/safety-events                                      WORKER | SAFETY_MANAGER | ADMIN
 
 GET  /api/ai/model-runs                                      ADMIN | SAFETY_MANAGER
 POST /api/ai/model-runs                                      ADMIN | AI_SERVICE
@@ -64,10 +64,12 @@ POST /api/ai/work-permits/{permitId}/analysis-results        ADMIN | AI_SERVICE
 
 GET  /api/risks/scores                                       ADMIN | SAFETY_MANAGER
 POST /api/risks/scores                                       ADMIN | AI_SERVICE
-POST /api/risks/simulations                                  AUTHENTICATED
+POST /api/risks/simulations                                  WORKER | SAFETY_MANAGER | ADMIN
 
 GET  /api/dashboard/summary                                  ADMIN | SAFETY_MANAGER
 ```
+
+게시판과 파일 API는 `WORKER`, `SAFETY_MANAGER`, `ADMIN`만 사용할 수 있습니다. `AI_SERVICE`는 AI 모델 결과와 위험 점수를 등록하는 API에만 접근하며, 위에 명시되지 않은 API는 기본적으로 거부됩니다.
 
 인증이 필요한 API는 로그인 응답의 `accessToken`을 아래처럼 전달합니다.
 

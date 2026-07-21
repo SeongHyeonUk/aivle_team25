@@ -84,4 +84,50 @@ class SecurityAuthorizationTest {
         mockMvc.perform(get("/api/ai/model-runs").with(user("ai").roles("AI_SERVICE")))
             .andExpect(status().isForbidden());
     }
+
+    @Test
+    void onlySafetyManagerCanCreateWorkPermit() throws Exception {
+        mockMvc.perform(post("/api/work-permits").with(user("worker").roles("WORKER")))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/work-permits").with(user("manager").roles("SAFETY_MANAGER")))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/api/work-permits").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void humanAccountsCanReadPermitsButAiServiceCannot() throws Exception {
+        mockMvc.perform(get("/api/work-permits").with(user("worker").roles("WORKER")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/work-permits").with(user("manager").roles("SAFETY_MANAGER")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/work-permits").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/work-permits").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void workerCanReadOwnEventFeedButNotCompleteEventFeed() throws Exception {
+        mockMvc.perform(get("/api/safety-events/my").with(user("worker").roles("WORKER")))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/api/safety-events").with(user("worker").roles("WORKER")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void aiServiceCannotUseHumanFeatures() throws Exception {
+        mockMvc.perform(get("/api/board/posts").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/safety-events").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/risks/simulations").with(user("ai").roles("AI_SERVICE")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void unlistedApiIsDeniedByDefault() throws Exception {
+        mockMvc.perform(get("/api/not-configured").with(user("admin").roles("ADMIN")))
+            .andExpect(status().isForbidden());
+    }
 }

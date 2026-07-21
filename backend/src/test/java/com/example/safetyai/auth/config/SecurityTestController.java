@@ -7,12 +7,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 class SecurityTestController {
-    @GetMapping({"/api/master/sites", "/api/dashboard/summary", "/api/ai/model-runs"})
+    @GetMapping({
+        "/api/master/sites",
+        "/api/dashboard/summary",
+        "/api/ai/model-runs",
+        "/api/work-permits",
+        "/api/board/posts",
+        "/api/safety-events",
+        "/api/safety-events/my",
+        "/api/risks/scores"
+    })
     Map<String, String> get() {
         return Map.of("status", "ok");
     }
 
-    @PostMapping({"/api/master/sites", "/api/ai/model-runs"})
+    @PostMapping({
+        "/api/master/sites",
+        "/api/ai/model-runs",
+        "/api/work-permits",
+        "/api/safety-events",
+        "/api/risks/simulations"
+    })
     Map<String, String> post() {
         return Map.of("status", "ok");
     }
