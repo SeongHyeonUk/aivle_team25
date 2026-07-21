@@ -1,4 +1,4 @@
-import { ClipboardCheck, Factory, FileSearch, LayoutDashboard, Mic, Settings, ShieldAlert, Siren } from "lucide-react";
+import { ClipboardCheck, Factory, FileSearch, LayoutDashboard, Mic, ShieldAlert, Siren } from "lucide-react";
 
 const workerNav = [
   ["dashboard", "오늘의 작업", LayoutDashboard],
@@ -11,7 +11,6 @@ const adminNav = [
   ["dashboard", "디지털 트윈 관제", Factory],
   ["monitoring", "안전 이벤트", ShieldAlert],
   ["permits", "작업 허가", FileSearch],
-  ["standards", "시스템 관리", Settings],
 ];
 
 export { workerNav, adminNav };
