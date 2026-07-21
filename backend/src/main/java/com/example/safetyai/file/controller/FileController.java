@@ -34,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/files")
 public class FileController {
     private static final long MAX_SAFETY_REPORT_IMAGE_SIZE = 10L * 1024L * 1024L;
+    private static final long MAX_PERMIT_SIZE = 10L * 1024L * 1024L;
     private static final Set<String> SAFETY_REPORT_IMAGE_TYPES = Set.of("image/jpeg", "image/png");
 
     private final JdbcTemplate jdbcTemplate;
@@ -110,6 +111,16 @@ public class FileController {
     private void validateUpload(MultipartFile file, String fileType) {
         if (file.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "첨부할 파일을 선택해 주세요.");
+        }
+        if ("permit".equals(fileType)) {
+            String originalName = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+            if (file.getSize() > MAX_PERMIT_SIZE) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "허가서는 10MB 이하만 업로드할 수 있습니다.");
+            }
+            if (!"application/pdf".equals(file.getContentType()) || !originalName.endsWith(".pdf")) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "허가서는 PDF 형식만 지원합니다.");
+            }
+            return;
         }
         if (!"safety_report".equals(fileType)) {
             return;
