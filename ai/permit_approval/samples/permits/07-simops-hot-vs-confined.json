@@ -1,0 +1,51 @@
+{
+  "note": "동시작업(SIMOPS) 충돌. 신규 화기작업이 이미 진행 중인 밀폐공간작업과 동일구역(B-12)·시간중첩(10-15시 vs 08-14시) → SIMOPS-001 반려 기대. active_permits를 지우거나 시간을 어긋내면 판정이 바뀌는지 확인해 볼 것.",
+  "permit": {
+    "permit_id": "PTW-2026-0707",
+    "work_type": "화기작업",
+    "zone": {
+      "block_id": "B-12",
+      "area_type": "블록내부",
+      "coordinates": [88.0, 30.0]
+    },
+    "time_window": {
+      "start": "2026-07-29T10:00:00",
+      "end": "2026-07-29T15:00:00"
+    },
+    "worker_count": 4,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "용접보안면", "방염복"],
+    "work_description": "B-12 블록 상부 데크 관통부 절단 작업.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": [
+    {
+      "permit_id": "PTW-2026-0690",
+      "work_type": "밀폐공간작업",
+      "zone": {
+        "block_id": "B-12",
+        "area_type": "탱크",
+        "coordinates": [88.0, 33.0]
+      },
+      "time_window": {
+        "start": "2026-07-29T08:00:00",
+        "end": "2026-07-29T14:00:00"
+      },
+      "worker_count": 2,
+      "supervisor_present": true,
+      "declared_ppe": ["안전모", "안전화", "송기마스크", "안전대"],
+      "work_description": "B-12 하부 밸러스트 탱크 내부 검사 (승인 완료, 진행 중).",
+      "special_conditions": {
+        "gas_measured": true,
+        "ventilation": true,
+        "adjacent_flammable": false,
+        "fire_watch_assigned": true
+      }
+    }
+  ]
+}

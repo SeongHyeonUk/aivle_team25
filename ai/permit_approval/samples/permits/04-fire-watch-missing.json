@@ -1,0 +1,27 @@
+{
+  "note": "P-94 6.1(3)아 '화기작업의 입회' 미이행 케이스. 환기는 하고 있어 HARD-003을 피하고 COND-005만 걸린다 → 조건부승인 기대. 화재감시자를 배치하면 승인제안으로 바뀌는지 비교해 볼 것.",
+  "permit": {
+    "permit_id": "PTW-2026-0704",
+    "work_type": "용접",
+    "zone": {
+      "block_id": "C-03",
+      "area_type": "블록내부",
+      "coordinates": [124.0, 12.5]
+    },
+    "time_window": {
+      "start": "2026-07-28T08:00:00",
+      "end": "2026-07-28T12:00:00"
+    },
+    "worker_count": 3,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "용접보안면", "방염복"],
+    "work_description": "C-03 블록 내부 격벽 보강재 용접. 작업반경 8m 지점에 단열재 자재가 적치되어 있음. 이동식 국소배기 가동 및 비산불티 차단막 설치 완료. 화재감시자는 별도 지정하지 않고 작업조장이 겸임 예정.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": true,
+      "fire_watch_assigned": false
+    }
+  },
+  "active_permits": []
+}

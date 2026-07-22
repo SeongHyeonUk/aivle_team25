@@ -1,0 +1,27 @@
+{
+  "note": "P-94 보충작업허가 '밀폐공간 출입'. 가스농도 측정 없이 출입 신청 → HARD-001 반려 기대. P-94 양식의 기준치(O2 18% 이상, H2S 10ppm 미만 등)는 현재 스키마가 수치까지 받지 않고 측정 여부만 본다.",
+  "permit": {
+    "permit_id": "PTW-2026-0705",
+    "work_type": "밀폐공간작업",
+    "zone": {
+      "block_id": "B-18",
+      "area_type": "탱크",
+      "coordinates": [92.0, 44.0]
+    },
+    "time_window": {
+      "start": "2026-07-28T09:00:00",
+      "end": "2026-07-28T13:00:00"
+    },
+    "worker_count": 2,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "송기마스크", "안전대"],
+    "work_description": "B-18 청수탱크 내부 잔여물 청소 및 육안 검사. 맨홀 개방 후 자연환기 8시간 실시. 가스검지기 교정 만료로 측정 미실시 상태이며 교정품은 오전 중 수령 예정.",
+    "special_conditions": {
+      "gas_measured": false,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": []
+}

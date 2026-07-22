@@ -1,0 +1,27 @@
+{
+  "note": "P-94 <별지양식1> 밀폐공간 보충작업의 '통신수단·구명장구' 및 입회자 부재. 가스측정·환기는 했으나 외부 감시인이 없다 → HARD-002 반려 기대.",
+  "permit": {
+    "permit_id": "PTW-2026-0706",
+    "work_type": "밀폐공간작업",
+    "zone": {
+      "block_id": "A-15",
+      "area_type": "탱크",
+      "coordinates": [30.0, 61.0]
+    },
+    "time_window": {
+      "start": "2026-07-28T14:00:00",
+      "end": "2026-07-28T18:00:00"
+    },
+    "worker_count": 2,
+    "supervisor_present": false,
+    "declared_ppe": ["안전모", "안전화", "송기마스크", "안전대"],
+    "work_description": "A-15 연료유 탱크 내부 코팅 상태 점검. 가스농도 측정 완료(O2 20.6%, H2S 0ppm), 강제환기 가동 중. 야간 교대 인력 부족으로 맨홀 외부 감시인 미배치.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": []
+}

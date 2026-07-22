@@ -1,0 +1,27 @@
+{
+  "note": "P-94 <별지양식1> 화기작업 + 보충작업(밀폐공간). 탱크 내부 화기작업인데 '불활성가스 치환 및 환기' 미실시 → HARD-004 반려 기대.",
+  "permit": {
+    "permit_id": "PTW-2026-0702",
+    "work_type": "화기작업",
+    "zone": {
+      "block_id": "B-12",
+      "area_type": "탱크",
+      "coordinates": [88.0, 31.5]
+    },
+    "time_window": {
+      "start": "2026-07-27T09:00:00",
+      "end": "2026-07-27T15:00:00"
+    },
+    "worker_count": 3,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "용접보안면", "방염복"],
+    "work_description": "B-12 화물창 내부 탱크. 밸러스트 배관 지지대 절단 및 개선 작업. 가스농도 측정 완료(HC 0%, O2 20.9%)하였으나 강제환기 설비는 익일 반입 예정.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": false,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": []
+}

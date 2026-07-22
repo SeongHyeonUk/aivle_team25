@@ -1,0 +1,153 @@
+# 작업허가서 승인 지원 모듈 설정
+# 명세 §11: 규칙은 YAML로, 경로·모델명·top-k는 이 파일로 외부화한다. 코드 하드코딩 금지.
+
+paths:
+  rules_dir: rule_engine/rules
+  corpus_raw: corpus/raw
+  corpus_chunks: corpus/chunks
+  corpus_index: corpus/index
+  synthetic_dir: data/synthetic
+
+# --- 합성 허가서 생성 (명세 §8) ---
+data_gen:
+  seed: 20260722
+  default_count: 500
+  # 시나리오 비율. 합은 1.0이어야 한다 (생성기가 검증).
+  scenario_mix:
+    normal: 0.60           # 정상 - 위반 없음
+    simops_conflict: 0.20  # 혼재작업 충돌
+    hot_work_flammable: 0.10  # 화기-인화물 인접
+    confined_space: 0.10   # 밀폐공간 관련
+  # 명세 §8: 아래 4개 카테고리가 모두 발화되는 것을 코드로 보장한다.
+  required_risk_categories:
+    - 인적
+    - 화재폭발
+    - 질식중독
+    - 혼재
+  # 데모용 야드 그리드. TODO(팀확인): 실제 야드 배치도로 교체.
+  yard:
+    block_prefixes: [A, B, C]
+    grid_rows: 4
+    grid_cols: 6
+
+# --- 야드 공간 관계 (명세 §6.1) ---
+conflict_matrix:
+  # 데모용 단순 그리드. TODO(팀확인): 실제 야드 배치도 확보 후
+  # blocks 테이블(grid_x, grid_y) 기반 로더로 교체.
+  strategy: grid
+  # 인접 판정 거리. 1 = 체비쇼프 거리 1(8방향 이웃)까지 인접으로 본다.
+  adjacency_distance: 1
+  # 서로 다른 접두사(A-01 vs B-01)를 다른 구역으로 볼지 여부.
+  # true면 접두사가 다르면 항상 비인접.
+  prefix_isolates: true
+
+# --- Retrieval (명세 §6.2) ---
+retrieval:
+  embedding_model: BAAI/bge-m3   # TODO(팀확인): 대안 multilingual-e5-large
+  top_k_legal: 5
+  top_k_cases: 5
+
+  # bge-m3의 기본 최대 길이는 8192다. 그대로 두면 CPU에서 임베딩이 몇 배로
+  # 느려진다. 우리 청크는 법령 평균 319자 / 사례 평균 549자라 512로 충분하고,
+  # 드물게 긴 조문(최대 4995자)만 뒷부분이 잘린다.
+  # TODO(팀확인): 잘린 긴 조문의 검색 품질이 문제되면 조문을 항 단위로 더
+  # 쪼개는 방안 검토 (명세 §6.2는 조문 단위를 규정한다).
+  max_seq_length: 512
+  batch_size: 16
+  # 정규화 + 내적 = 코사인 유사도. FAISS IndexFlatIP를 쓴다.
+  # 청크가 1만 건 이하라 근사 인덱스(IVF/HNSW)는 불필요하다 — 완전탐색이
+  # 빠르고 정확하며 재현 가능하다.
+  normalize: true
+
+  # 명세 §6.2: 법령과 사고사례는 분리 인덱싱하고 각각 top-k를 따로 뽑는다.
+  indexes:
+    legal:
+      chunks: legal.jsonl
+      index: legal.faiss
+      meta: legal.meta.jsonl
+    cases:
+      chunks: cases.jsonl
+      index: cases.faiss
+      meta: cases.meta.jsonl
+
+# --- 코퍼스 수집 API (명세 §7) ---
+# 인증키는 코드/설정에 넣지 말고 .env로 주입한다 (.env.example 참고).
+corpus_sources:
+  law_go_kr:
+    # 국가법령정보 공동활용 OPEN API. 인증키(OC)는 open.law.go.kr에서 신청.
+    search_endpoint: https://www.law.go.kr/DRF/lawSearch.do
+    service_endpoint: https://www.law.go.kr/DRF/lawService.do
+    targets:
+      - 산업안전보건기준에 관한 규칙
+      - 산업안전보건법
+    request_interval_sec: 1.0
+  kosha_cases:
+    # 공공데이터포털 15121001 국내재해사례 게시판 정보 조회서비스.
+    # 이용허락범위 제한 없음 / 개발계정 1,000 호출/일.
+    #
+    # 아래 값은 2026-07-22에 실제 호출로 검증했다(resultCode 00, totalCount 6348).
+    endpoint: https://apis.data.go.kr/B552468/disaster_api02/getdisaster_api02
+    call_api_id: 1060   # 필수 고정값. 포털 설명문의 "국내재해사례 게시판 조회"는
+                        # 값이 아니라 의미 설명이다. 실제 값은 이 숫자다.
+    num_of_rows: 1000   # 1000까지 정상 동작 확인
+    max_pages: 10       # 6348건 / 1000 = 7페이지면 충분
+    request_interval_sec: 1.0
+
+    # !! 서버가 business·keyword 요청 파라미터를 무시한다(검증 완료).
+    #    어떤 값을 보내도 동일한 전체 목록이 온다. 따라서 필터는 응답의
+    #    business 필드로 클라이언트에서 건다.
+    # 빈 리스트([])면 전체 업종을 수집한다.
+    # 표본 1000건 기준 분포: 건설업 386 / 제조업 318 / 서비스업 186 / 조선업 110
+    # 조선소 작업과 직결되는 업종만 남긴다.
+    # 건설업(4,185) + 서비스업(345)을 빼면 6,348 -> 1,818건이 되어 CPU 임베딩
+    # 시간이 5시간에서 1시간 반으로 줄어든다.
+    # 나중에 건설업을 추가하려면 아래 리스트에 넣고 다시 fetch + index_builder를
+    # 돌리면 된다. 벡터 캐시가 청크 id 기준이라 기존 1,818건은 재계산하지 않는다.
+    keep_businesses:
+      - 조선업    # 378건
+      - 제조업    # 1,440건
+
+# --- RAG 생성기 (명세 §6.3) ---
+# LLM은 판정하지 않는다. 이미 확정된 verdict에 대한 설명·권고만 생성한다.
+generator:
+  provider: gemini
+  # Google AI Studio 무료 티어. 이 모듈의 생성 작업은 "주어진 조문을 인용해
+  # 설명문 쓰기"라 추론 부담이 크지 않아 flash로 충분하다.
+  #
+  # !! 별칭(gemini-flash-latest)을 쓰지 않고 버전을 고정한다 !!
+  # 안전 판정 시스템의 설명문은 감사 대상이라, 어느 날 모델이 조용히 바뀌어
+  # 같은 허가서에 다른 설명이 나오는 상황을 만들면 안 된다.
+  #
+  # 검증(2026-07-22): gemini-2.5-flash는 신규 키에 404
+  # ("no longer available to new users")를 낸다. 3.5-flash는 503(과부하),
+  # 2.0-flash는 429(무료 쿼터 소진). 실호출로 200이 확인된 것은 3.6-flash다.
+  # TODO(팀확인): 설명 품질이 부족하면 gemini-3.1-pro-preview 계열 검토.
+  llm_model: gemini-3.6-flash
+  endpoint: https://generativelanguage.googleapis.com/v1beta/models
+  api_key_env: GEMINI_API_KEY
+
+  # 창작이 아니라 인용이 일이다. 낮게 둔다.
+  temperature: 0.2
+
+  # !! Gemini 3.x는 thinking 모델이다 !!
+  # max_output_tokens는 사고 토큰과 본문이 **함께** 쓰는 예산이라, 1024로 두면
+  # 사고에 다 쓰이고 본문 JSON이 중간에 잘린 채 finishReason=MAX_TOKENS로 온다
+  # (실측: 실패 3/3). 넉넉히 잡고 사고 수준을 낮춘다.
+  max_output_tokens: 4096
+  # low | high. 근거는 이미 프롬프트에 다 주어져 있어 깊은 추론이 필요 없다.
+  # null이면 파라미터를 보내지 않는다 (thinking을 모르는 모델 대비).
+  thinking_level: low
+  timeout_sec: 60
+  max_retries: 3            # 429/5xx만 지수 백오프. 4xx는 즉시 실패
+  request_interval_sec: 1.0  # 무료 티어 RPM 보호 (연속 호출 시)
+
+  # 프롬프트에 넣을 근거 개수. retrieval의 top_k와 별개인 이유:
+  # PermitRetriever가 룰 근거 조문을 top-k에 **더해서** 주입하므로
+  # legal 결과가 top_k_legal보다 많을 수 있다.
+  context:
+    max_legal: 6
+    max_cases: 5
+    snippet_chars: 500
+
+  # 명세 §10 인용 무결성. 검색 결과에 없는 조문을 인용한 문장은 제거한다.
+  strict_citations: true

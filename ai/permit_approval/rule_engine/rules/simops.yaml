@@ -1,0 +1,87 @@
+# SIMOPS(동시작업) 충돌 매트릭스 — 명세 §6.1
+#
+# 신규 허가서를 "현재 승인되어 진행 중인 허가서 목록"과 대조해 평가한다.
+# 세 조건이 모두 성립해야 위반이다: 작업종류 조합 ∧ 공간 관계 ∧ 시간 중첩.
+#
+# legal_ref는 hard_constraints.yaml과 동일하게 4단계에서 교차 검증 대상이다.
+#
+# condition 키:
+#   work_type     : [WorkType, ...]  — 신규 허가서 쪽
+#   conflict_with : [WorkType, ...]  — 진행 중 허가서 쪽
+#   spatial       : [동일구역|인접구역|원거리, ...]
+#   temporal      : 시간중첩  (현재 지원하는 유일한 값)
+#
+# bidirectional (기본 true): 신규/진행중의 역할을 바꿔서도 매치한다.
+#   화기작업이 먼저 승인됐고 도장이 신규로 들어와도 같은 물리적 위험이므로
+#   방향에 관계없이 잡아야 한다. 방향이 의미를 갖는 규칙(예: 상부 양중 →
+#   하부 작업)만 false로 둔다.
+
+- rule_id: SIMOPS-001
+  name: 화기-밀폐공간 동시작업
+  severity: hard
+  risk_category: 혼재
+  summary: 밀폐공간 작업과 화기작업이 동일 구역에서 동시에 진행된다.
+  condition:
+    work_type: [화기작업, 용접]
+    conflict_with: [밀폐공간작업]
+    spatial: [동일구역]
+    temporal: 시간중첩
+  bidirectional: true
+  legal_ref: 산업안전보건기준에 관한 규칙 제241조(화재위험작업 시의 준수사항)
+
+- rule_id: SIMOPS-002
+  name: 양중 하부 동시작업
+  severity: hard
+  risk_category: 인적
+  summary: 양중작업 반경 내에서 다른 작업이 동시에 진행된다(낙하 위험).
+  condition:
+    work_type: [양중]
+    conflict_with: [일반, 취부, 사상, 도장, 용접, 화기작업]
+    spatial: [동일구역]
+    temporal: 시간중첩
+  bidirectional: true
+  # 검증됨(2026-07-22): 제20조제1호(추락 위험 장소), 제3호(케이블 크레인 권상용
+  # 와이어로프 내각 안쪽 등)가 관계 근로자 외 출입금지를 규정한다.
+  legal_ref: 산업안전보건기준에 관한 규칙 제20조(출입의 금지 등)
+
+- rule_id: SIMOPS-003
+  name: 도장-사상 분진 혼재
+  severity: conditional
+  risk_category: 혼재
+  summary: 도장작업과 사상작업이 동일 구역에서 겹쳐 유증기·분진이 혼재한다.
+  condition:
+    work_type: [도장]
+    conflict_with: [사상]
+    spatial: [동일구역]
+    temporal: 시간중첩
+  bidirectional: true
+  # 조문은 실재하나 국소배기장치 설치 의무 규정이라 "동시작업 충돌"의 직접
+  # 근거로는 약하다.
+  # TODO(팀확인): 도장-사상 혼재에 더 적합한 근거 조문 검토 (제422조 유지 여부).
+  legal_ref: 산업안전보건기준에 관한 규칙 제422조(관리대상 유해물질과 관계되는 설비)
+
+- rule_id: SIMOPS-004
+  name: 화기-인화물 인접 충돌
+  severity: hard
+  risk_category: 화재폭발
+  summary: 화기작업과 인접 구역 도장작업 동시 진행
+  condition:
+    work_type: [화기작업, 용접]
+    conflict_with: [도장]
+    spatial: [동일구역, 인접구역]
+    temporal: 시간중첩
+  bidirectional: true
+  legal_ref: 산업안전보건기준에 관한 규칙 제241조(화재위험작업 시의 준수사항)
+
+- rule_id: SIMOPS-005
+  name: 밀폐공간 상부 도장 혼재
+  severity: hard
+  risk_category: 질식중독
+  summary: 밀폐공간 작업 구역과 인접한 곳에서 도장작업이 진행되어 유증기 유입 위험이 있다.
+  condition:
+    work_type: [밀폐공간작업]
+    conflict_with: [도장]
+    spatial: [동일구역, 인접구역]
+    temporal: 시간중첩
+  bidirectional: true
+  legal_ref: 산업안전보건기준에 관한 규칙 제619조의2(산소 및 유해가스 농도의 측정)

@@ -1,0 +1,27 @@
+{
+  "note": "P-94 화기작업 안전조치 중 '작업주위 가연성물질 제거'와 '환기장비'를 모두 미조치 → HARD-003 반려 기대. 화재감시자도 없어 COND-005가 함께 걸린다(hard가 있으므로 판정은 반려).",
+  "permit": {
+    "permit_id": "PTW-2026-0703",
+    "work_type": "용접",
+    "zone": {
+      "block_id": "B-11",
+      "area_type": "블록내부",
+      "coordinates": [76.0, 30.0]
+    },
+    "time_window": {
+      "start": "2026-07-27T13:00:00",
+      "end": "2026-07-27T17:00:00"
+    },
+    "worker_count": 5,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "용접보안면", "방염복"],
+    "work_description": "B-11 블록 내부 선체 외판 보강재 용접. 인접 통로에 도료 드럼 6통과 시너 팔레트가 적치되어 있으나 반출 장비 미확보. 국소배기 미설치.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": false,
+      "adjacent_flammable": true,
+      "fire_watch_assigned": false
+    }
+  },
+  "active_permits": []
+}

@@ -1,0 +1,51 @@
+{
+  "note": "P-94 보충작업허가 '중장비 사용'에 대응. 양중작업 하부에서 취부작업이 진행 중 → SIMOPS-002 반려 기대. 신호수 배치·출입제한과 직결되는 케이스다.",
+  "permit": {
+    "permit_id": "PTW-2026-0708",
+    "work_type": "양중",
+    "zone": {
+      "block_id": "C-09",
+      "area_type": "도크",
+      "coordinates": [150.0, 22.0]
+    },
+    "time_window": {
+      "start": "2026-07-29T09:00:00",
+      "end": "2026-07-29T12:00:00"
+    },
+    "worker_count": 6,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "안전대"],
+    "work_description": "C-09 도크 골리앗 크레인으로 상부 블록 인양 및 탑재. 지정 운전자·신호수 배치, 붐 안전각도 확인 완료.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": [
+    {
+      "permit_id": "PTW-2026-0688",
+      "work_type": "취부",
+      "zone": {
+        "block_id": "C-09",
+        "area_type": "도크",
+        "coordinates": [150.0, 20.0]
+      },
+      "time_window": {
+        "start": "2026-07-29T08:00:00",
+        "end": "2026-07-29T17:00:00"
+      },
+      "worker_count": 8,
+      "supervisor_present": true,
+      "declared_ppe": ["안전모", "안전화", "보안경"],
+      "work_description": "C-09 도크 하부 선체 블록 취부 작업 (승인 완료, 진행 중).",
+      "special_conditions": {
+        "gas_measured": true,
+        "ventilation": true,
+        "adjacent_flammable": false,
+        "fire_watch_assigned": true
+      }
+    }
+  ]
+}

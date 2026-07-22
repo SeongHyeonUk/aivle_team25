@@ -1,0 +1,27 @@
+{
+  "note": "P-94 4.3 '작업부서 책임자' 부재. 12인 대규모 도장작업에 관리감독자 미지정 → COND-004 조건부승인 기대. 감독자를 배치하면 위반이 사라진다.",
+  "permit": {
+    "permit_id": "PTW-2026-0709",
+    "work_type": "도장",
+    "zone": {
+      "block_id": "A-21",
+      "area_type": "개방구역",
+      "coordinates": [55.0, 88.0]
+    },
+    "time_window": {
+      "start": "2026-07-30T08:00:00",
+      "end": "2026-07-30T17:00:00"
+    },
+    "worker_count": 12,
+    "supervisor_present": false,
+    "declared_ppe": ["안전모", "안전화", "방독마스크", "보호의"],
+    "work_description": "A-21 도장장 외부 야적 구역. 블록 외판 방청 프라이머 스프레이 도장. 도장반 12명 투입, 관리감독자는 타 구역 겸임으로 상주 불가.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": []
+}

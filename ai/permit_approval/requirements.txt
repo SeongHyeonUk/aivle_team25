@@ -1,0 +1,25 @@
+# 명세 §9의 1~5단계 의존성.
+#
+# 5단계(RAG 생성기)는 새 패키지가 없다. Gemini REST를 requests로 직접 부르고
+# 키는 python-dotenv로 읽는다 — 둘 다 아래에 이미 있다. generateContent 호출
+# 하나 때문에 google-genai SDK를 끌어오지 않았다.
+
+# --- 1~3단계 (스키마·합성데이터·룰엔진). 이것만으로 판정이 동작한다. ---
+pydantic>=2.7
+PyYAML>=6.0
+requests>=2.31
+python-dotenv>=1.0
+pytest>=8.0
+
+# --- 4단계 (임베딩·검색) ---
+# torch는 CPU판으로 설치할 것. PyPI 기본 휠은 CUDA가 묶여 있어 2.5GB에 달하고,
+# 이 모듈은 임베딩 추론만 하므로 GPU가 필요 없다:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.5
+sentence-transformers>=5.0
+faiss-cpu>=1.9
+
+# 주의: Windows + Anaconda에서는 import 순서가 중요하다.
+# numpy를 torch보다 먼저 로드해야 OpenMP 런타임 충돌(OMP: Error #15)이 안 난다.
+# retrieval/__init__.py가 이를 강제한다.
+numpy>=1.26

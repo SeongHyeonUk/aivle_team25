@@ -1,0 +1,27 @@
+{
+  "note": "P-94 안전조치 요구사항 '안전장구' 미비. 화기작업 신청서에 용접보안면이 누락 → COND-001 조건부승인 기대. declared_ppe에 \"용접보안면\"을 추가하면 위반이 사라진다.",
+  "permit": {
+    "permit_id": "PTW-2026-0710",
+    "work_type": "화기작업",
+    "zone": {
+      "block_id": "C-14",
+      "area_type": "개방구역",
+      "coordinates": [138.0, 47.0]
+    },
+    "time_window": {
+      "start": "2026-07-30T13:00:00",
+      "end": "2026-07-30T16:00:00"
+    },
+    "worker_count": 2,
+    "supervisor_present": true,
+    "declared_ppe": ["안전모", "안전화", "방염복"],
+    "work_description": "C-14 야드 개방구역. 임시 지지대 가스 절단 및 그라인딩. 소화기 2대 비치, 불받이포 설치 완료.",
+    "special_conditions": {
+      "gas_measured": true,
+      "ventilation": true,
+      "adjacent_flammable": false,
+      "fire_watch_assigned": true
+    }
+  },
+  "active_permits": []
+}

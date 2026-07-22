@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 생성물 — 재현 가능하므로 커밋하지 않는다 (seed 고정)
+data/synthetic/
+
+# 수집 원문·청킹 결과 — 용량이 크고 API로 재수집 가능
+corpus/raw/*
+corpus/chunks/*
+!corpus/raw/.gitkeep
+!corpus/chunks/.gitkeep
+
+# FAISS 인덱스 - 재생성 가능하고 용량이 크다
+corpus/index/
