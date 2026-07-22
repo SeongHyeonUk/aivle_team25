@@ -15,9 +15,9 @@ function Login({ initialUsername, onLogin, onRegister, notify }) {
     setSubmitting(true);
     try {
       const result = await apiRequest("/api/auth/login", { method: "POST", body: JSON.stringify(form) });
-      const roles = result.user.roles || [];
+      const roles = (result.user.roles || []).map(role => String(role).toUpperCase());
       const isControlUser = roles.includes("ADMIN") || roles.includes("SAFETY_MANAGER");
-      onLogin({ token: result.accessToken, role: isControlUser ? "admin" : "worker", name: result.user.name, username: result.user.username });
+      onLogin({ token: result.accessToken, role: isControlUser ? "admin" : "worker", roles, name: result.user.name, username: result.user.username });
     } catch (error) { notify(error.message); } finally { setSubmitting(false); }
   };
   return <>

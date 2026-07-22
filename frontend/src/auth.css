@@ -38,6 +38,14 @@ body,
   border-radius: 8px;
   font-weight: 800;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.secondary-auth-btn svg {
+  width: 17px;
 }
 
 .primary-btn:disabled {
@@ -82,17 +90,6 @@ body,
 .terms-banner b,
 .terms-banner small {
   display: block;
-}
-
-.terms-banner b {
-  color: #b5c5d0;
-  font-size: 10px;
-}
-
-.terms-banner small {
-  margin-top: 2px;
-  color: #60778a;
-  font-size: 8px;
 }
 
 .terms-consent {
@@ -143,6 +140,18 @@ body,
   font-size: 9px;
   cursor: pointer;
 }
+
+.terms-banner b {
+  color: #b5c5d0;
+  font-size: 10px;
+}
+
+.terms-banner small {
+  margin-top: 2px;
+  color: #60778a;
+  font-size: 8px;
+}
+
 
 .terms-modal-backdrop {
   position: fixed;
@@ -335,6 +344,42 @@ body,
 .field-check {
   color: var(--cyan);
   flex: 0 0 auto;
+}
+
+.mobile-app-notice {
+  text-align: center;
+}
+
+.mobile-app-notice .eyebrow {
+  margin-top: 18px;
+}
+
+.mobile-app-notice h2 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.mobile-app-notice p {
+  margin: 12px 0 28px;
+  color: #aebdca;
+  line-height: 1.7;
+}
+
+.mobile-app-icon {
+  width: 78px;
+  height: 78px;
+  margin: 0 auto;
+  border: 1px solid rgba(48, 198, 242, .42);
+  border-radius: 20px;
+  background: rgba(48, 198, 242, .08);
+  color: var(--cyan);
+  display: grid;
+  place-items: center;
+}
+
+.mobile-app-icon svg {
+  width: 38px;
+  height: 38px;
 }
 
 @media (max-width: 760px) {
