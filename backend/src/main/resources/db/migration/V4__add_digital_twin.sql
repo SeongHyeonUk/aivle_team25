@@ -92,28 +92,32 @@ CREATE INDEX idx_twin_history_asset_time ON twin_telemetry_history(asset_id, rec
 CREATE INDEX idx_twin_alarm_status_time ON twin_alarm_events(status, occurred_at DESC);
 CREATE INDEX idx_twin_scenario_status_time ON twin_scenario_runs(status, started_at DESC);
 
+INSERT INTO sites (site_code, name, address, status)
+VALUES ('GEOJE-YARD', '거제 스마트 조선소', '경상남도 거제시', 'active')
+ON DUPLICATE KEY UPDATE name = VALUES(name), status = VALUES(status);
+
 INSERT INTO twin_facilities
   (site_id, facility_code, name, facility_type, status, risk_level, progress_percent, map_x, map_y, map_width, map_height)
 SELECT id, 'T-BAR-SHOP', 'T-BAR 자동용접 SHOP', 'WELDING_SHOP', 'running', 'low', 67, 10, 18, 25, 22
-FROM sites WHERE site_code = 'GEOJE-SMART'
+FROM sites WHERE site_code = 'GEOJE-YARD'
 ON DUPLICATE KEY UPDATE name = VALUES(name), facility_type = VALUES(facility_type);
 
 INSERT INTO twin_facilities
   (site_id, facility_code, name, facility_type, status, risk_level, progress_percent, map_x, map_y, map_width, map_height)
 SELECT id, 'ASSEMBLY-01', '블록 조립 1공장', 'ASSEMBLY', 'running', 'low', 82, 42, 16, 22, 25
-FROM sites WHERE site_code = 'GEOJE-SMART'
+FROM sites WHERE site_code = 'GEOJE-YARD'
 ON DUPLICATE KEY UPDATE name = VALUES(name), facility_type = VALUES(facility_type);
 
 INSERT INTO twin_facilities
   (site_id, facility_code, name, facility_type, status, risk_level, progress_percent, map_x, map_y, map_width, map_height)
 SELECT id, 'PAINT-02', '도장 2공장', 'PAINTING', 'warning', 'medium', 43, 68, 19, 18, 21
-FROM sites WHERE site_code = 'GEOJE-SMART'
+FROM sites WHERE site_code = 'GEOJE-YARD'
 ON DUPLICATE KEY UPDATE name = VALUES(name), facility_type = VALUES(facility_type);
 
 INSERT INTO twin_facilities
   (site_id, facility_code, name, facility_type, status, risk_level, progress_percent, map_x, map_y, map_width, map_height)
 SELECT id, 'DOCK-01', '제1 건조 도크', 'DOCK', 'running', 'low', 58, 25, 58, 48, 25
-FROM sites WHERE site_code = 'GEOJE-SMART'
+FROM sites WHERE site_code = 'GEOJE-YARD'
 ON DUPLICATE KEY UPDATE name = VALUES(name), facility_type = VALUES(facility_type);
 
 INSERT INTO twin_assets

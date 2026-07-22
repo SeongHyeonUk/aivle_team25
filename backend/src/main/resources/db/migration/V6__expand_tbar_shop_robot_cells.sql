@@ -24,3 +24,4 @@ SELECT id, 'RB-WELD-06', '용접 로봇 6호기', 'WELDING_ROBOT', 'AR1440 repre
 FROM twin_facilities WHERE facility_code = 'T-BAR-SHOP'
 ON DUPLICATE KEY UPDATE name = VALUES(name), model_name = VALUES(model_name), metadata = VALUES(metadata);
 -- End of T-BAR SHOP robot-cell expansion.
+
