@@ -47,6 +47,7 @@ public class SecurityConfig {
 
                 // Operational dashboards and the complete event feed contain site-wide information.
                 .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers("/api/digital-twin/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/safety-events").hasAnyRole("ADMIN", "SAFETY_MANAGER")
 
                 // AI_SERVICE is a machine account used only to submit model outputs.
