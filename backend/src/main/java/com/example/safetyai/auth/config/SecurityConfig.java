@@ -49,6 +49,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/dashboard/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
                 .requestMatchers("/api/digital-twin/**").hasAnyRole("ADMIN", "SAFETY_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/safety-events").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/api/safety-events/reports").hasAnyRole("ADMIN", "SAFETY_MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/safety-events/*/actions").hasAnyRole("ADMIN", "SAFETY_MANAGER")
 
                 // AI_SERVICE is a machine account used only to submit model outputs.
                 .requestMatchers(HttpMethod.POST, "/api/ai/**").hasAnyRole("ADMIN", "AI_SERVICE")
