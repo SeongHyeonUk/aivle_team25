@@ -30,6 +30,10 @@ body,
   margin-top: 22px;
 }
 
+.auth-actions.admin-login-actions {
+  grid-template-columns: 1fr;
+}
+
 .secondary-auth-btn {
   height: 53px;
   border: 1px solid var(--orange);

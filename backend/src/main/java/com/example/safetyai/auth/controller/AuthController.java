@@ -28,6 +28,11 @@ public class AuthController {
         return authService.register(request);
     }
 
+    @PostMapping("/register/admin")
+    public Map<String, Object> registerAdmin(@Valid @RequestBody RegisterRequest request) {
+        return authService.registerAdmin(request);
+    }
+
     @PostMapping("/employees/verify")
     public Map<String, Object> verifyEmployee(@Valid @RequestBody EmployeeVerificationRequest request) {
         return authService.verifyEmployee(request.name(), request.employeeNo());

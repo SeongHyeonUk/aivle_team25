@@ -30,6 +30,10 @@ server:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  weather:
+    kma-service-key: ${KMA_SERVICE_KEY:}
+    grid-x: ${KMA_GRID_X:90}
+    grid-y: ${KMA_GRID_Y:69}
   bootstrap-admin:
     username: ${BOOTSTRAP_ADMIN_USERNAME:}
     password: ${BOOTSTRAP_ADMIN_PASSWORD:}

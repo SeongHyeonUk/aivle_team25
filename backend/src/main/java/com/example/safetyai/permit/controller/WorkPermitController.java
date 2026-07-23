@@ -93,6 +93,17 @@ public class WorkPermitController {
             "SELECT * FROM risk_scores WHERE permit_id = ? ORDER BY created_at DESC",
             id
         ));
+        permit.put("checklistSubmissions", jdbcTemplate.queryForList(
+            """
+                SELECT pcs.id, pcs.status, pcs.submitted_at, u.name AS responder_name,
+                       (SELECT COUNT(*) FROM permit_checklist_items pci WHERE pci.checklist_id = pc.id) AS item_count
+                  FROM permit_checklists pc
+                  JOIN permit_checklist_submissions pcs ON pcs.checklist_id = pc.id
+                  JOIN users u ON u.id = pcs.responder_id
+                 WHERE pc.permit_id = ? ORDER BY pcs.submitted_at DESC
+                """,
+            id
+        ));
         return permit;
     }
 

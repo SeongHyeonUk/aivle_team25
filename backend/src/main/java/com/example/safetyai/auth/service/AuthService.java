@@ -65,6 +65,15 @@ public class AuthService {
 
     @Transactional
     public Map<String, Object> register(RegisterRequest request) {
+        return registerWithRole(request, "WORKER");
+    }
+
+    @Transactional
+    public Map<String, Object> registerAdmin(RegisterRequest request) {
+        return registerWithRole(request, "ADMIN");
+    }
+
+    private Map<String, Object> registerWithRole(RegisterRequest request, String roleCode) {
         String name = request.name().trim();
         String employeeNo = request.employeeNo().trim();
         String username = normalizeUsername(request.username());
@@ -93,9 +102,10 @@ public class AuthService {
         int assignedRoles = jdbcTemplate.update(
             """
                 INSERT INTO user_roles (user_id, role_id, site_id)
-                SELECT ?, id, NULL FROM roles WHERE role_code = 'WORKER'
+                SELECT ?, id, NULL FROM roles WHERE role_code = ?
                 """,
-            userId
+            userId,
+            roleCode
         );
         if (assignedRoles != 1) {
             throw new IllegalStateException("기본 WORKER 역할이 준비되지 않았습니다.");
@@ -106,7 +116,7 @@ public class AuthService {
             "employeeNo", employee.getEmployeeNo(),
             "username", username,
             "name", employee.getName(),
-            "roles", List.of("WORKER")
+            "roles", List.of(roleCode)
         );
     }
 

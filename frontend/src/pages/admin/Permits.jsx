@@ -29,6 +29,7 @@ function Permits({ notify, session }) {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [approving, setApproving] = useState(false);
   const authorization = useMemo(() => ({ Authorization: `Bearer ${session.token}` }), [session.token]);
 
   const loadPermits = async (preferredId) => {
@@ -53,9 +54,13 @@ function Permits({ notify, session }) {
 
   useEffect(() => {
     if (!selectedId) { setDetail(null); return; }
-    apiRequest(`/api/work-permits/${selectedId}`, { headers: authorization })
-      .then(setDetail)
-      .catch(error => notify(error.message));
+    let active = true;
+    const loadDetail = (showError = false) => apiRequest(`/api/work-permits/${selectedId}`, { headers: authorization })
+      .then(data => { if (active) setDetail(data); })
+      .catch(error => { if (showError) notify(error.message); });
+    loadDetail(true);
+    const timer = window.setInterval(() => loadDetail(false), 30 * 1000);
+    return () => { active = false; window.clearInterval(timer); };
   }, [selectedId]);
 
   useEffect(() => () => {
@@ -145,13 +150,29 @@ function Permits({ notify, session }) {
     }
   };
 
+  const approvePermit = async () => {
+    if (!detail || approving) return;
+    setApproving(true);
+    try {
+      await apiRequest(`/api/work-permits/${detail.id}/approve`, { method: "POST", headers: authorization });
+      const updated = await apiRequest(`/api/work-permits/${detail.id}`, { headers: authorization });
+      setDetail(updated);
+      await loadPermits(detail.id);
+      notify("허가서가 승인되었고 AI 체크리스트가 생성되었습니다.");
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      setApproving(false);
+    }
+  };
+
   const attachedFile = detail?.files?.[0];
   return <>
     <SectionHead eyebrow="AI PERMIT ANALYSIS" title="작업 허가서 분석" desc="SIMOPS 충돌과 유사 사고를 분석해 승인 조건을 추천합니다." action={<button className="primary-small" onClick={() => setModalOpen(true)}><Plus/>허가서 등록</button>}/>
     <div className="permit-layout">
       <div className="permit-list">
         <div className="list-tools"><Search/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="허가서, 작업명 검색"/></div>
-        {filtered.length ? filtered.map(permit => <button className={selectedId === permit.id ? "selected" : ""} onClick={() => setSelectedId(permit.id)} key={permit.id}><div><span className="badge orange">{permit.status === "pending_review" ? "검토 대기" : permit.status}</span><small>{permit.permit_no}</small></div><b>{permit.work_title || "작업명 미입력"}</b><span>{permit.work_type || "공종 미입력"}</span></button>) : <div className="permit-list-empty"><span><FileText/></span><b>{search ? "검색 결과가 없습니다" : "등록된 허가서가 없습니다"}</b><p>{search ? "다른 검색어로 다시 찾아보세요." : "상단의 허가서 등록 버튼으로 첫 허가서를 추가해 보세요."}</p></div>}
+        {filtered.length ? filtered.map(permit => <button className={selectedId === permit.id ? "selected" : ""} onClick={() => setSelectedId(permit.id)} key={permit.id}><div><span className="badge orange">{permit.status === "pending_review" ? "검토 대기" : permit.status === "approved" ? "승인 완료" : permit.status}</span><small>{permit.permit_no}</small></div><b>{permit.work_title || "작업명 미입력"}</b><span>{permit.work_type || "공종 미입력"}</span></button>) : <div className="permit-list-empty"><span><FileText/></span><b>{search ? "검색 결과가 없습니다" : "등록된 허가서가 없습니다"}</b><p>{search ? "다른 검색어로 다시 찾아보세요." : "상단의 허가서 등록 버튼으로 첫 허가서를 추가해 보세요."}</p></div>}
       </div>
       <div className="analysis-panel">
         {detail ? <><div className="analysis-head"><div><span>{detail.permit_no}</span><h3>{detail.work_title}</h3></div><span className="ai-chip"><Sparkles/>분석 대기</span></div>
@@ -161,7 +182,8 @@ function Permits({ notify, session }) {
             <div className="approval-condition-title"><span><Sparkles/></span><div><small>AI RECOMMENDATION</small><h4>추천 승인 조건</h4></div></div>
             <div className="approval-condition-empty"><span className="approval-condition-orb"><Sparkles/></span><div><b>분석 결과를 준비하고 있습니다</b><p>AI 분석이 완료되면 안전한 작업을 위한 추천 승인 조건이 여기에 표시됩니다.</p></div></div>
           </section>
-          <div className="approve-actions"><button className="delete-permit-btn" type="button" disabled={deleting} onClick={deletePermit}><Trash2/>{deleting ? "삭제 중..." : "허가서 삭제"}</button><button className="outline-btn">보완 요청</button><button className="primary-small" onClick={() => notify("분석 완료 후 승인할 수 있습니다.")}><Check/>조건부 승인</button></div></> : <div className="permit-detail-empty"><span><Sparkles/></span><small>AI PERMIT ANALYSIS</small><h3>분석할 허가서를 선택해 주세요</h3><p>왼쪽 목록에서 허가서를 선택하거나 새 허가서를 등록하면<br/>AI 분석 결과와 추천 승인 조건을 확인할 수 있습니다.</p></div>}
+          {detail.checklistSubmissions?.length > 0 && <section className="checklist-receipts"><h4>작업자 체크리스트 제출 현황</h4>{detail.checklistSubmissions.map(submission => <div key={submission.id}><span><Check/></span><div><b>{submission.responder_name}</b><small>{submission.item_count}개 항목 확인 · {new Date(submission.submitted_at).toLocaleString("ko-KR")}</small></div><em>제출 완료</em></div>)}</section>}
+          <div className="approve-actions"><button className="delete-permit-btn" type="button" disabled={deleting} onClick={deletePermit}><Trash2/>{deleting ? "삭제 중..." : "허가서 삭제"}</button><button className="outline-btn">보완 요청</button><button className="primary-small" disabled={approving || detail.status === "approved"} onClick={approvePermit}><Check/>{detail.status === "approved" ? "승인 완료" : approving ? "승인 중..." : "허가서 승인"}</button></div></> : <div className="permit-detail-empty"><span><Sparkles/></span><small>AI PERMIT ANALYSIS</small><h3>분석할 허가서를 선택해 주세요</h3><p>왼쪽 목록에서 허가서를 선택하거나 새 허가서를 등록하면<br/>AI 분석 결과와 추천 승인 조건을 확인할 수 있습니다.</p></div>}
       </div>
     </div>
     {modalOpen && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) closeModal(); }}>

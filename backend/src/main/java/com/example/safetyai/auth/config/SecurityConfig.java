@@ -39,7 +39,7 @@ public class SecurityConfig {
             .httpBasic(basic -> basic.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/health", "/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers("/api/health", "/api/auth/register", "/api/auth/register/admin", "/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/employees/verify", "/api/auth/usernames/*/availability").permitAll()
 
                 // Master data may be read by signed-in users, but only administrators may change it.
