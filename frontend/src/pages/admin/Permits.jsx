@@ -45,8 +45,15 @@ function Permits({ notify, session }) {
     loadPermits();
     apiRequest("/api/master/sites", { headers: authorization })
       .then(rows => {
-        setSites(rows);
-        setForm(current => ({ ...current, siteId: current.siteId || String(rows[0]?.id || "") }));
+        const seenNames = new Set();
+        const uniqueSites = rows.filter(site => {
+          const key = String(site.name || site.site_code || site.id).trim().toLocaleLowerCase("ko-KR");
+          if (seenNames.has(key)) return false;
+          seenNames.add(key);
+          return true;
+        });
+        setSites(uniqueSites);
+        setForm(current => ({ ...current, siteId: current.siteId || String(uniqueSites[0]?.id || "") }));
       })
       .catch(error => notify(error.message));
   }, []);
