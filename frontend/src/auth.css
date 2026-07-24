@@ -498,6 +498,32 @@ body,
   box-shadow: 0 26px 70px #26374620;
 }
 
+.auth-theme-shell.light-theme .mobile-app-notice h2 {
+  color: #182430;
+}
+
+.auth-theme-shell.light-theme .mobile-app-notice p {
+  color: #607484;
+}
+
+.auth-theme-shell.light-theme .mobile-app-icon {
+  border-color: #b9dce7;
+  background: #edf8fb;
+  color: #087fa3;
+}
+
+.auth-theme-shell.light-theme .mobile-app-notice .secondary-auth-btn {
+  border-color: #d7a778;
+  background: #fffaf5;
+  color: #8f4a16;
+}
+
+.auth-theme-shell.light-theme .mobile-app-notice .secondary-auth-btn:hover {
+  border-color: #e9610b;
+  background: #fff3e8;
+  color: #c44d08;
+}
+
 .auth-theme-shell.light-theme .login-head h2,
 .auth-theme-shell.light-theme .login-card label > span {
   color: #182430;

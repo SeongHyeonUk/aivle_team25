@@ -45,7 +45,7 @@ function App() {
   return <><Routes>
     <Route path="/login" element={session ? <Navigate to={homePath} replace/> : <Login initialUsername={registeredUsername} onRegister={() => navigate("/register")} onLogin={login} notify={notify} theme={theme} onToggleTheme={toggleTheme} />}/>
     <Route path="/register" element={session ? <Navigate to={homePath} replace/> : <Register onBack={() => navigate("/login")} onRegistered={registered} notify={notify} theme={theme} onToggleTheme={toggleTheme} />}/>
-    <Route path="/worker/*" element={canUseWorker ? <MobileAppNotice session={session} onLogout={logout}/> : <Navigate to={homePath} replace/>}/>
+    <Route path="/worker/*" element={canUseWorker ? <MobileAppNotice session={session} onLogout={logout} theme={theme} onToggleTheme={toggleTheme}/> : <Navigate to={homePath} replace/>}/>
     <Route path="/admin/:page" element={canUseAdmin ? <Dashboard session={session} onLogout={logout} notify={notify} theme={theme} onToggleTheme={toggleTheme}/> : <Navigate to={homePath} replace/>}/>
     <Route path="*" element={<Navigate to={homePath} replace/>}/>
   </Routes>
