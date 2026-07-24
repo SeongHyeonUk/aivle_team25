@@ -1,14 +1,15 @@
 import React, { useState } from "react";
-import { ChevronRight, Eye, EyeOff, FileText, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, FileText, LockKeyhole, Moon, ShieldCheck, Sun, UserRound } from "lucide-react";
 import { apiRequest } from "../../api/client";
 import TermsModal from "../../components/auth/TermsModal";
 import VisualPanel from "../../components/auth/VisualPanel";
 
-function Login({ initialUsername, onLogin, onRegister, notify }) {
+function Login({ initialUsername, onLogin, onRegister, notify, theme, onToggleTheme }) {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [form, setForm] = useState({ username: initialUsername || "", password: "" });
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.username || !form.password) return notify("아이디와 비밀번호를 입력해 주세요.");
@@ -20,7 +21,8 @@ function Login({ initialUsername, onLogin, onRegister, notify }) {
       onLogin({ token: result.accessToken, role: isControlUser ? "admin" : "worker", roles, name: result.user.name, username: result.user.username });
     } catch (error) { notify(error.message); } finally { setSubmitting(false); }
   };
-  return <>
+  return <div className={`auth-theme-shell ${theme}-theme`}>
+    <button type="button" className="auth-theme-toggle" onClick={onToggleTheme} title={theme === "dark" ? "밝은 모드로 전환" : "어두운 모드로 전환"} aria-label={theme === "dark" ? "밝은 모드로 전환" : "어두운 모드로 전환"}>{theme === "dark" ? <Sun/> : <Moon/>}</button>
     <main className="login-page">
       <VisualPanel/>
       <section className="login-wrap"><form className="login-card" onSubmit={submit}>
@@ -33,7 +35,7 @@ function Login({ initialUsername, onLogin, onRegister, notify }) {
       </form></section>
     </main>
     <TermsModal open={termsOpen} onClose={()=>setTermsOpen(false)}/>
-  </>;
+  </div>;
 }
 
 export default Login;

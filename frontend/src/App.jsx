@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { apiRequest } from "./api/client";
@@ -9,6 +9,7 @@ import MobileAppNotice from "./pages/worker/MobileAppNotice";
 
 function App() {
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(() => localStorage.getItem("dashboard-theme") || "dark");
   const [session, setSession] = useState(() => {
     try {
       const stored = JSON.parse(sessionStorage.getItem("safety-session"));
@@ -19,6 +20,12 @@ function App() {
   });
   const [registeredUsername, setRegisteredUsername] = useState("");
   const [toast, setToast] = useState("");
+  useEffect(() => {
+    localStorage.setItem("dashboard-theme", theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", theme === "light" ? "#f7f9fb" : "#07111b");
+  }, [theme]);
+  const toggleTheme = () => setTheme(current => current === "dark" ? "light" : "dark");
   const notify = (message) => { setToast(message); window.clearTimeout(window.__toast); window.__toast = window.setTimeout(() => setToast(""), 2600); };
   const login = (nextSession) => {
     sessionStorage.setItem("safety-session", JSON.stringify(nextSession));
@@ -36,10 +43,10 @@ function App() {
   const canUseWorker = session && (session.role === "worker" || session.roles?.some(role => String(role).toUpperCase() === "WORKER"));
   const canUseAdmin = session && (session.role === "admin" || session.roles?.some(role => role === "ADMIN" || role === "SAFETY_MANAGER"));
   return <><Routes>
-    <Route path="/login" element={session ? <Navigate to={homePath} replace/> : <Login initialUsername={registeredUsername} onRegister={() => navigate("/register")} onLogin={login} notify={notify} />}/>
-    <Route path="/register" element={session ? <Navigate to={homePath} replace/> : <Register onBack={() => navigate("/login")} onRegistered={registered} notify={notify} />}/>
+    <Route path="/login" element={session ? <Navigate to={homePath} replace/> : <Login initialUsername={registeredUsername} onRegister={() => navigate("/register")} onLogin={login} notify={notify} theme={theme} onToggleTheme={toggleTheme} />}/>
+    <Route path="/register" element={session ? <Navigate to={homePath} replace/> : <Register onBack={() => navigate("/login")} onRegistered={registered} notify={notify} theme={theme} onToggleTheme={toggleTheme} />}/>
     <Route path="/worker/*" element={canUseWorker ? <MobileAppNotice session={session} onLogout={logout}/> : <Navigate to={homePath} replace/>}/>
-    <Route path="/admin/:page" element={canUseAdmin ? <Dashboard session={session} onLogout={logout} notify={notify}/> : <Navigate to={homePath} replace/>}/>
+    <Route path="/admin/:page" element={canUseAdmin ? <Dashboard session={session} onLogout={logout} notify={notify} theme={theme} onToggleTheme={toggleTheme}/> : <Navigate to={homePath} replace/>}/>
     <Route path="*" element={<Navigate to={homePath} replace/>}/>
   </Routes>
     {toast && <div className="toast"><CheckCircle2 size={18}/>{toast}</div>}
