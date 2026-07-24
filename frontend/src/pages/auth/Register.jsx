@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Check, CheckCircle2, LockKeyhole, UserRound } from "lucide-react";
+import { Check, CheckCircle2, LockKeyhole, Moon, Sun, UserRound } from "lucide-react";
 import { apiRequest } from "../../api/client";
 import TermsModal from "../../components/auth/TermsModal";
 import VisualPanel from "../../components/auth/VisualPanel";
 
-function Register({ onBack, onRegistered, notify }) {
+function Register({ onBack, onRegistered, notify, theme, onToggleTheme }) {
   const [form, setForm] = useState({ name:"", employeeNo:"", username:"", password:"", passwordConfirm:"" });
   const [employeeVerified, setEmployeeVerified] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(false);
@@ -43,7 +43,8 @@ function Register({ onBack, onRegistered, notify }) {
       onRegistered(form.username);
     } catch (error) { notify(error.message); } finally { setSubmitting(false); }
   };
-  return <>
+  return <div className={`auth-theme-shell ${theme}-theme`}>
+    <button type="button" className="auth-theme-toggle" onClick={onToggleTheme} title={theme === "dark" ? "밝은 모드로 전환" : "어두운 모드로 전환"} aria-label={theme === "dark" ? "밝은 모드로 전환" : "어두운 모드로 전환"}>{theme === "dark" ? <Sun/> : <Moon/>}</button>
     <main className="login-page">
       <VisualPanel/>
       <section className="login-wrap"><form className="login-card register-card" onSubmit={submit}>
@@ -69,7 +70,7 @@ function Register({ onBack, onRegistered, notify }) {
       </form></section>
     </main>
     <TermsModal open={termsOpen} onClose={()=>setTermsOpen(false)}/>
-  </>;
+  </div>;
 }
 
 export default Register;
